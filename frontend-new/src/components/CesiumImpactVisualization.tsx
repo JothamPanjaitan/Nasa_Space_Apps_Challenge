@@ -99,29 +99,68 @@ export const CesiumImpactVisualization: React.FC<CesiumImpactVisualizationProps>
       const Cesium = (window as any).Cesium;
       
       if (cesiumContainerRef.current && !viewerRef.current) {
-        // Set Cesium Ion access token (using demo token - replace with your own for production)
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ0OS1kMWFjYmFkNjc5YzciLCJpZCI6NTc3MzMsImlhdCI6MTYyMDg1NTQ0Nn0.XcKpgANiY19MC4bdFUXMVEBToBmqS8kuYpUlxJHYZxk';
-        
-        // Initialize Cesium viewer with basic terrain (no elevation queries)
-        viewerRef.current = new Cesium.Viewer(cesiumContainerRef.current, {
-          animation: false,
-          timeline: false,
-          baseLayerPicker: false,
-          geocoder: false,
-          homeButton: true,
-          sceneModePicker: true,
-          navigationHelpButton: false,
-          fullscreenButton: false,
-          vrButton: false,
-          infoBox: false,
-          selectionIndicator: false,
-          terrainProvider: new Cesium.EllipsoidTerrainProvider(), // Use simple ellipsoid instead of world terrain
-          requestRenderMode: false, // Disable request render mode to avoid timing issues
-          maximumRenderTimeChange: Infinity
-        });
+        try {
+          // Disable Cesium Ion to prevent automatic terrain loading
+          Cesium.Ion.defaultAccessToken = undefined;
+          
+          // Initialize Cesium viewer with basic ellipsoid terrain (no height queries)
+          const waitForContainer = async () => {
+            while (true) {
+              const el = cesiumContainerRef.current;
+              if (el && el.clientWidth > 0 && el.clientHeight > 0) return el;
+              await new Promise(r => requestAnimationFrame(r));
+            }
+          };
+          
+          const containerEl = await waitForContainer();
 
-        // Enable lighting for beautiful Earth
-        viewerRef.current.scene.globe.enableLighting = true;
+          viewerRef.current = new Cesium.Viewer(containerEl, {
+            animation: false,
+            timeline: false,
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: true,
+            sceneModePicker: true,
+            navigationHelpButton: false,
+            fullscreenButton: false,
+            vrButton: false,
+            infoBox: false,
+            selectionIndicator: false,
+            terrainProvider: new Cesium.EllipsoidTerrainProvider({
+              ellipsoid: Cesium.Ellipsoid.WGS84
+            }),
+            requestRenderMode: true,
+            maximumRenderTimeChange: Number.POSITIVE_INFINITY,
+            imageryProvider: false
+          });
+
+          // Add a simple OpenStreetMap imagery layer (no terrain data)
+          viewerRef.current.imageryLayers.addImageryProvider(
+            new Cesium.OpenStreetMapImageryProvider({
+              url: 'https://a.tile.openstreetmap.org/'
+            })
+          );
+
+          // Aggressively disable all terrain features to prevent height extraction
+          viewerRef.current.scene.globe.depthTestAgainstTerrain = false;
+          viewerRef.current.scene.globe.tileCacheSize = 100;
+          viewerRef.current.scene.globe.maximumScreenSpaceError = 2;
+          
+          // Ensure terrain provider stays as ellipsoid
+          viewerRef.current.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+          
+          // Enable lighting for beautiful Earth
+          viewerRef.current.scene.globe.enableLighting = true;
+        } catch (error) {
+          console.error('Error initializing Cesium viewer:', error);
+          return;
+        }
+        
+        // Ensure viewer was successfully created
+        if (!viewerRef.current) {
+          console.error('Cesium viewer failed to initialize');
+          return;
+        }
         
         // Set initial camera position to see Earth from space
         viewerRef.current.camera.setView({
@@ -193,6 +232,11 @@ export const CesiumImpactVisualization: React.FC<CesiumImpactVisualizationProps>
     if (!Cesium) return;
     
     const viewer = viewerRef.current;
+
+    if (!viewer?.scene?.canvas || viewer.scene.canvas.height === 0) {
+      // Canvas not ready this tick; skip.
+      return;
+    }
     
     // Wait for viewer to be ready
     if (!viewer.scene || !viewer.scene.globe) {
@@ -319,6 +363,10 @@ export const CesiumImpactVisualization: React.FC<CesiumImpactVisualizationProps>
     try {
       const Cesium = (window as any).Cesium;
       const viewer = viewerRef.current;
+      if (!viewer?.scene?.canvas || viewer.scene.canvas.height === 0) {
+        // Canvas not ready this tick; skip.
+        return;
+      }
 
       // Clear previous impact visualization
       viewer.entities.values

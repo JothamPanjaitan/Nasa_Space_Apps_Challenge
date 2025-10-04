@@ -28,6 +28,9 @@ export default function Earth3D({
   useEffect(() => {
     if (!mountRef.current) return;
 
+    const width = mountRef.current.clientWidth || 800;   // fallback values
+    const height = mountRef.current.clientHeight || 600;
+
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000011);
@@ -36,7 +39,7 @@ export default function Earth3D({
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
       75,
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      width / height,
       0.1,
       1000
     );
@@ -45,7 +48,7 @@ export default function Earth3D({
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+    renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mountRef.current.appendChild(renderer.domElement);
