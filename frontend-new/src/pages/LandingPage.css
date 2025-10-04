@@ -1,0 +1,364 @@
+/* Landing Page Styles - Meteor Madness: Defend Earth */
+
+.landing-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-primary) 0%, #050810 100%);
+}
+
+/* Hero Container */
+.hero-container {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xxl);
+  align-items: center;
+  min-height: calc(100vh - 200px);
+  padding: var(--spacing-xxl) var(--spacing-xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+/* Hero Title */
+.hero-title-wrapper {
+  position: relative;
+}
+
+.hero-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.title-line-1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--accent-500) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.title-line-2 {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 40px rgba(26, 111, 237, 0.5);
+}
+
+.title-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--primary-600) 0%, transparent 50%);
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: -1;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Hero Subtitle */
+.hero-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  max-width: 600px;
+}
+
+/* CTA Buttons */
+.cta-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.btn-large {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-lg);
+  min-height: 56px;
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+}
+
+.feature-card {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-normal);
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary-600);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.feature-card h3 {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.feature-card p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+/* Hero Visual - Earth with Impactor */
+.hero-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 600px;
+}
+
+.earth-container {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  animation: earthRotate 60s linear infinite;
+}
+
+@keyframes earthRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.earth-sphere {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: 
+    radial-gradient(circle at 30% 30%, #4a90e2, #1a4d7a),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="30" r="8" fill="%23228B22" opacity="0.6"/><circle cx="60" cy="50" r="12" fill="%23228B22" opacity="0.6"/><circle cx="40" cy="70" r="6" fill="%23228B22" opacity="0.6"/></svg>');
+  background-size: cover;
+  box-shadow: 
+    inset -20px -20px 50px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(26, 111, 237, 0.4);
+}
+
+.earth-atmosphere {
+  position: absolute;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 60%, rgba(26, 111, 237, 0.3) 100%);
+  pointer-events: none;
+}
+
+.impactor-arc {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  pointer-events: none;
+}
+
+.impactor-dot {
+  filter: drop-shadow(0 0 10px var(--danger-600));
+}
+
+/* Facts Strip */
+.facts-strip {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  max-width: 800px;
+  z-index: 100;
+  animation: slideUp 0.5s ease-out;
+}
+
+.fact-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.fact-icon {
+  font-size: 1.5rem;
+}
+
+.fact-text {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.fact-attribution {
+  color: var(--muted-400);
+  font-style: italic;
+  font-size: var(--font-size-xs);
+}
+
+/* Quick Stats */
+.quick-stats {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: var(--spacing-lg);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(138, 160, 200, 0.15);
+  z-index: 99;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item .stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xxl);
+  font-weight: 700;
+  color: var(--accent-500);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-item .stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .hero-container {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+
+  .hero-visual {
+    height: 400px;
+  }
+
+  .earth-container {
+    width: 300px;
+    height: 300px;
+  }
+
+  .impactor-arc {
+    width: 400px;
+    height: 400px;
+  }
+
+  .title-line-1 {
+    font-size: 2.5rem;
+  }
+
+  .title-line-2 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-container {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+  }
+
+  .cta-buttons .btn {
+    width: 100%;
+  }
+
+  .quick-stats {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+
+  .stat-item {
+    flex: 1 1 40%;
+  }
+
+  .facts-strip {
+    bottom: 160px;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    transform: none;
+  }
+
+  .title-line-1 {
+    font-size: 2rem;
+  }
+
+  .title-line-2 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-visual {
+    height: 300px;
+  }
+
+  .earth-container {
+    width: 200px;
+    height: 200px;
+  }
+
+  .impactor-arc {
+    width: 300px;
+    height: 300px;
+  }
+
+  .stat-item .stat-value {
+    font-size: var(--font-size-xl);
+  }
+}

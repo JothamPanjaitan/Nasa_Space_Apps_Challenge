@@ -19,23 +19,54 @@ export interface Cartesian {
 }
 
 export interface ImpactData {
+  // Core impact parameters
   energy: number; // Joules
   tntEquivalent: number; // tons TNT
-  craterDiameter: number; // meters
-  blastRadius: number; // km
-  thermalRadius: number; // km
-  seismicRadius: number; // km
-  tsunamiRadius?: number; // km
-  tsunamiHeight?: number; // m
   impactLocation: { lat: number; lng: number };
   collisionPredicted: boolean;
+  
+  // Physical effects
+  craterDiameter: number; // meters
+  craterDepth: number; // meters
+  
+  // Effect radii (km)
+  blastRadius: number; // Total destruction
+  heavyDamageRadius: number; // Severe damage
+  moderateDamageRadius: number; // Moderate damage
+  thermalRadius: number; // Thermal radiation
+  seismicRadius: number; // Seismic effects
+  
+  // Tsunami data (if oceanic impact)
+  tsunamiRisk: number; // 0-1 scale
+  tsunamiRadius?: number; // km
+  tsunamiHeight?: number; // m
+  tsunamiArrivalTimes?: Array<{
+    distance: number; // km from impact
+    arrivalTime: number; // minutes
+    waveHeight: number; // m
+  }>;
+  
+  // Seismic data
+  seismicMagnitude: number; // Richter scale
+  seismicIntensity: string; // Modified Mercalli Intensity
+  
+  // Environmental effects
+  ejectaVolume: number; // km³
+  fireballRadius: number; // km
+  
+  // Human impact estimates
+  populationAtRisk: number;
+  infrastructureAtRisk: string[];
+  
+  // Mitigation data
+  earlyWarningTime: number; // seconds
+  recommendedActions: string[];
 }
 
 // Physical constants
 const AU_IN_KM = 149597870.7; // kilometers in 1 AU
 const GM_SUN = 1.32712440018e11; // μ = GM of sun in km^3 / s^2
 const EARTH_RADIUS_KM = 6371;
-const EARTH_RADIUS_AU = EARTH_RADIUS_KM / AU_IN_KM;
 
 // Tolerance & iteration limits for Kepler solver
 const KEPLER_TOL = 1e-12;
@@ -184,32 +215,126 @@ export function computeImpactEffects(radiusM: number, densityKgM3: number, veloc
   // crater diameter estimate (empirical / pi-scaling)
   const projectileDiameterM = radius * 2;
   const craterDiameterM = projectileDiameterM * 1.61 * Math.pow(density / 2700, 1 / 3) * Math.pow(velocityMS / 1000, 2 / 3);
+  const craterDepthM = craterDiameterM / 5; // Simple depth scaling
 
-  const blastRadiusKm = Math.min(craterDiameterM * 10 / 1000, 1000);
-  const thermalRadiusKm = Math.min(craterDiameterM * 5 / 1000, 500);
+  // Enhanced blast effects (scaled from nuclear weapons data)
+  const scaledYield = tntTons / 1000; // kt TNT equivalent
+  const fireballRadiusKm = 0.05 * Math.pow(scaledYield, 0.4);
+  const heavyDamageRadiusKm = 1.0 * Math.pow(scaledYield, 0.33);
+  const moderateDamageRadiusKm = 2.5 * Math.pow(scaledYield, 0.33);
+  const thermalRadiusKm = 5.0 * Math.pow(scaledYield, 0.4);
   const seismicRadiusKm = Math.min(craterDiameterM * 20 / 1000, 2000);
 
-  // Tsunami parameters for ocean impact — heuristic
-  let tsunamiRadius: number | undefined;
-  let tsunamiHeight: number | undefined;
-  // basic heuristic: if latitude within typical ocean latitudes, compute values (this is an approximation)
-  if (impactLocation && Math.abs(impactLocation.lat) <= 60) {
-    tsunamiRadius = Math.min(craterDiameterM * 15 / 1000, 800);
-    tsunamiHeight = Math.min(50, Math.sqrt(tntTons / 1e6) * 5);
+  // Seismic magnitude estimation (simplified)
+  const seismicCoupling = 1e-4; // Typical coupling factor
+  const seismicEnergy = energyJ * seismicCoupling;
+  const seismicMagnitude = (2/3) * Math.log10(Math.max(seismicEnergy, 1)) - 6.0;
+  const seismicIntensity = getMercalliIntensity(seismicMagnitude, 10);
+
+  // Tsunami parameters for ocean impact
+  const isOceanic = Math.abs(impactLocation.lat) <= 60; // Simplified ocean detection
+  const tsunamiRisk = isOceanic ? Math.min(1, 0.1 * Math.log10(tntTons / 1000)) : 0;
+  const tsunamiRadius = isOceanic ? Math.min(craterDiameterM * 15 / 1000, 800) : undefined;
+  const tsunamiHeight = isOceanic ? Math.min(50, Math.sqrt(tntTons / 1e6) * 5) : undefined;
+
+  // Environmental effects
+  const ejectaVolume = Math.PI * Math.pow(craterDiameterM/2, 2) * (craterDiameterM * 0.1) * 1e-9; // km³
+
+  // Population and infrastructure estimates (simplified)
+  const baseDensity = 100; // people/km²
+  const area = Math.PI * heavyDamageRadiusKm * heavyDamageRadiusKm;
+  const populationAtRisk = Math.round(baseDensity * area);
+  
+  const infrastructureAtRisk = ['Major roads', 'Power lines', 'Residential areas'];
+  if (heavyDamageRadiusKm > 50) {
+    infrastructureAtRisk.push('Airports', 'Hospitals', 'Industrial facilities');
   }
 
+  // Early warning calculation
+  const detectionDistance = 0.05; // AU
+  const earlyWarningTime = (detectionDistance * AU_IN_KM) / velocityKmS; // seconds
+
+  // Mitigation recommendations
+  const recommendedActions = generateMitigationRecommendations(tntTons, earlyWarningTime, isOceanic);
+
   return {
+    // Core parameters
     energy: energyJ,
     tntEquivalent: tntTons,
+    impactLocation,
+    collisionPredicted: true,
+    
+    // Physical effects
     craterDiameter: craterDiameterM,
-    blastRadius: blastRadiusKm,
+    craterDepth: craterDepthM,
+    
+    // Effect radii
+    blastRadius: heavyDamageRadiusKm,
+    heavyDamageRadius: heavyDamageRadiusKm,
+    moderateDamageRadius: moderateDamageRadiusKm,
     thermalRadius: thermalRadiusKm,
     seismicRadius: seismicRadiusKm,
+    
+    // Tsunami data
+    tsunamiRisk,
     tsunamiRadius,
     tsunamiHeight,
-    impactLocation,
-    collisionPredicted: true
+    
+    // Seismic data
+    seismicMagnitude,
+    seismicIntensity,
+    
+    // Environmental effects
+    ejectaVolume,
+    fireballRadius: fireballRadiusKm,
+    
+    // Human impact
+    populationAtRisk,
+    infrastructureAtRisk,
+    
+    // Mitigation data
+    earlyWarningTime,
+    recommendedActions
   };
+}
+
+// Helper function for Mercalli intensity
+function getMercalliIntensity(magnitude: number, distanceKm: number): string {
+  const intensity = magnitude - 2.76 * Math.log10(distanceKm) + 0.3;
+  
+  if (intensity >= 9.0) return 'IX (Violent)';
+  if (intensity >= 8.0) return 'VIII (Severe)';
+  if (intensity >= 7.0) return 'VII (Very Strong)';
+  if (intensity >= 6.0) return 'VI (Strong)';
+  if (intensity >= 5.0) return 'V (Moderate)';
+  return 'IV (Light) or less';
+}
+
+// Helper function for mitigation recommendations
+function generateMitigationRecommendations(tntEquivalent: number, warningTime: number, isOceanic: boolean): string[] {
+  const recommendations: string[] = [];
+  
+  if (warningTime > 86400 * 30) { // More than 30 days
+    recommendations.push('Deploy kinetic impactor mission');
+    recommendations.push('Consider gravity tractor for fine-tuning');
+  } else if (warningTime > 86400 * 7) { // 1-4 weeks
+    recommendations.push('Prepare for nuclear explosive device (NED) deployment');
+    recommendations.push('Evacuate high-risk areas');
+  } else if (warningTime > 3600 * 24) { // 1-7 days
+    recommendations.push('Execute mass evacuation');
+    recommendations.push('Deploy civil defense measures');
+  } else {
+    recommendations.push('Seek immediate shelter in reinforced structures');
+    recommendations.push('Move to high ground if near coast');
+  }
+  
+  if (isOceanic) {
+    recommendations.push('Issue tsunami warnings for coastal regions');
+  } else {
+    recommendations.push('Prepare for potential firestorms and dust clouds');
+  }
+  
+  return recommendations;
 }
 
 /**

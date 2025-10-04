@@ -1,6 +1,7 @@
 // USGS API integration for seismic and tsunami data
 const USGS_EARTHQUAKE_API = 'https://earthquake.usgs.gov/fdsnws/event/1/query';
 const USGS_ELEVATION_API = 'https://nationalmap.gov/epqs/pqs.php';
+const USGS_TSUNAMI_API = 'https://www.ngdc.noaa.gov/hazel/hazard/data/tsu/tsu-database.json';
 
 export class UsgsApiService {
   static async getSeismicActivity(startTime, endTime, minMagnitude = 2.5) {

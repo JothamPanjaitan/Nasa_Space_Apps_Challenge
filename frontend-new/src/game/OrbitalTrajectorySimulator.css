@@ -11,6 +11,10 @@
   overflow: hidden;
 }
 
+.orbital-canvas {
+  overscroll-behavior: contain;
+}
+
 .simulator-header {
   position: absolute;
   top: 20px;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { MapContainer, TileLayer, Circle, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Circle, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { UsgsApiService } from './services/usgsApi';
 import {  
@@ -16,6 +16,29 @@ L.Icon.Default.mergeOptions({
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
+
+// Component to force map refresh
+function MapRefresher() {
+  const map = useMap();
+
+  useEffect(() => {
+    // Force map to invalidate size on mount and when window resizes
+    const handleResize = () => {
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
+
+  return null;
+}
 
 interface AsteroidParams {
   size: number;
@@ -69,15 +92,42 @@ const DEFAULT_ASTEROID: AsteroidParams = {
 };
 
 const DEFAULT_IMPACT: ImpactData = {
+  // Core impact parameters
   energy: 1e15,
   tntEquivalent: 1e6,
+  impactLocation: { lat: 0, lng: 0 },
+  collisionPredicted: true,
+
+  // Physical effects
   craterDiameter: 1000,
+  craterDepth: 200,
+
+  // Effect radii (km)
   blastRadius: 20,
+  heavyDamageRadius: 15,
+  moderateDamageRadius: 30,
   thermalRadius: 10,
   seismicRadius: 40,
+
+  // Seismic properties
+  seismicMagnitude: 6.5,
+  seismicIntensity: "5",           // string
+
+  // Other physical effects
+  ejectaVolume: 100000,
+  fireballRadius: 5,
+
+  // Tsunami data (optional)
+  tsunamiRisk: 0,
   tsunamiRadius: 0,
-  impactLocation: { lat: 0, lng: 0 },
-  collisionPredicted: true
+  tsunamiHeight: 0,
+  tsunamiArrivalTimes: [],
+
+  // New required fields
+  populationAtRisk: 0,              // placeholder
+  infrastructureAtRisk: [],          // placeholder
+  earlyWarningTime: 0,              // placeholder (minutes)
+  recommendedActions: []            // placeholder empty array
 };
 
 export default function ImpactMap({
@@ -95,9 +145,9 @@ export default function ImpactMap({
   const [regionId, setRegionId] = useState<string>(
     (typeof passedParams?.region === 'string' ? passedParams.region : (passedParams?.region as any)?.id) || DEFAULT_ASTEROID.region
   );
-  const [showDirect, setShowDirect] = useState(true);
-  const [showIndirect, setShowIndirect] = useState(true);
-  const [showTsunami, setShowTsunami] = useState(true);
+  const [showDirect, setShowDirect] = useState(false);
+  const [showIndirect, setShowIndirect] = useState(false);
+  const [showTsunami, setShowTsunami] = useState(false);
   const [showEconomic, setShowEconomic] = useState(false);
   const [showEnvironmental, setShowEnvironmental] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
@@ -379,24 +429,37 @@ export default function ImpactMap({
       <div className="map-content">
         <div className="map-container" style={{ height: '70vh', minHeight: '420px' }}>
           {mapLoading && !mapError && (
-            <div className="map-overlay">
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0, 0, 0, 0.8)',
+              color: 'white',
+              padding: '20px',
+              borderRadius: '10px',
+              textAlign: 'center',
+              zIndex: 1000
+            }}>
               <div style={{ fontSize: '24px', marginBottom: '10px' }}>🗺️</div>
               <div>Loading Map...</div>
             </div>
           )}
           <MapContainer
+            key={`map-${regionId}`}
             center={impactLocation as [number, number]}
-            zoom={4}
+            zoom={2}
+            minZoom={2}
+            maxZoom={18}
             style={{ height: '100%', width: '100%' }}
             className="impact-map-leaflet"
-            preferCanvas={true}
+            preferCanvas={false}
             zoomControl={true}
             scrollWheelZoom={true}
             doubleClickZoom={true}
             dragging={true}
             maxBounds={WORLD_BOUNDS}
             maxBoundsViscosity={1.0}
-            worldCopyJump={true}
             whenReady={() => {
               setMapError(null);
               setMapLoading(false);
@@ -405,9 +468,11 @@ export default function ImpactMap({
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              noWrap={true}
+              maxZoom={18}
+              minZoom={2}
               bounds={WORLD_BOUNDS}
             />
+            <MapRefresher />
             {/* Impact Point */}
             <Marker position={impactLocation as [number, number]} icon={impactIcon}>
               <Popup>
@@ -423,7 +488,18 @@ export default function ImpactMap({
             {impactZones}
           </MapContainer>
           {mapError && (
-            <div className="map-overlay">
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0, 0, 0, 0.8)',
+              color: 'white',
+              padding: '20px',
+              borderRadius: '10px',
+              textAlign: 'center',
+              zIndex: 1000
+            }}>
               <h3>🗺️ Map Loading Issue</h3>
               <p>Map failed to load. This might be due to:</p>
               <ul style={{ textAlign: 'left', margin: '10px 0' }}>

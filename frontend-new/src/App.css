@@ -1,4 +1,108 @@
 /* Additional styles specific to App component */
+
+/* Main Navigation */
+.main-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-xl);
+  z-index: 10000;
+  border-bottom: 1px solid rgba(138, 160, 200, 0.15);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+}
+
+.nav-link:hover {
+  color: var(--primary-500);
+  background: rgba(26, 111, 237, 0.1);
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+}
+
+.nav-toggle span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text-primary);
+  transition: var(--transition-fast);
+}
+
+.app-content {
+  margin-top: 60px;
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    padding: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: var(--transition-normal);
+    pointer-events: none;
+  }
+
+  .nav-links-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .nav-link {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Leaflet Popup Styles */
 .leaflet-popup-content-wrapper {
   background: rgba(0, 0, 0, 0.9);
   color: white;

@@ -2,6 +2,17 @@
 
 An interactive web-based game inspired by Outer Wilds where players must deflect incoming asteroids to save Earth from catastrophic impacts. Features real NASA data, machine learning predictions, 3D orbital visualization, and time-loop storytelling mechanics.
 
+## 🎯 Quick Start
+
+**Want to try it immediately?** Open the standalone demo:
+```bash
+open impact_demo.html
+```
+
+**Full installation?** See [QUICK_START.md](QUICK_START.md) or [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)
+
+**Advanced features?** Check [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
+
 ## 🎮 Game Features
 
 ### Core Gameplay
@@ -195,10 +206,28 @@ frontend/
 - [x] Time loop mechanics and discovery system
 - [x] Adaptive difficulty system
 
+### Recently Added ✨
+- [x] USGS earthquake and elevation data integration
+- [x] Tsunami wave propagation modeling (prototype)
+- [x] Seismic magnitude estimation from impact energy
+- [x] Keplerian orbital mechanics with proper collision detection
+- [x] Backend API proxy for NASA/USGS data
+- [x] Enhanced impact analysis with multiple damage radii
+- [x] Population and infrastructure risk assessment
+
+### 🎉 NEW: Advanced Features (v2.0) ✨
+- [x] **NASA NeoWs API Integration**: Live asteroid data with automatic orbit rendering
+- [x] **Hopkinson-Cranz Overpressure**: Accurate blast wave calculations with empirical curves
+- [x] **Advanced Tsunami Simulation**: ComMIT/MOST workflow integration with coastal impact assessment
+- [x] **Cesium 3D Visualization**: Interactive globe with real-time impact zone rendering
+- [x] **PDF Report Generation**: Professional reports in PDF, HTML, and CSV formats
+- [x] **Standalone HTML Demo**: Zero-installation demo with full features
+
+📖 **See [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) for detailed documentation**
+
 ### Planned Features
-- [ ] USGS earthquake and elevation data integration
-- [ ] Tsunami wave propagation modeling
 - [ ] Advanced deflection strategies (gravity tractor, laser ablation)
+- [ ] Real-time NOAA ComMIT tsunami computation integration
 - [ ] Multiplayer competitive mode
 - [ ] Leaderboard and achievements system
 - [ ] Mobile app version

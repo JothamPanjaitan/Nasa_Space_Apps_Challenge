@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, WheelEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Earth3D from '../components/Earth3D';
 import {
   SimulationEngine,
   type OrbitalElements as SimOrbitalElements,
-  type Cartesian,
   type ImpactData
 } from '../services/simulationEngine';
 import './OrbitalTrajectorySimulator.css';
@@ -21,7 +19,6 @@ interface AsteroidSimulatorProps {
 }
 
 const AU_IN_KM = 149597870.7; // kilometers in 1 AU
-const EARTH_RADIUS_KM = 6371;
 
 const REGIONS = [
   { id: 'north_america', label: 'North America', lat: 45.0, lng: -100.0 },
@@ -34,6 +31,13 @@ const REGIONS = [
   { id: 'ocean_atlantic', label: 'Atlantic Ocean', lat: 20.0, lng: -30.0 },
 ];
 
+// Prevent browser zoom on wheel+ctrl inside canvas
+function preventWheel(e: WheelEvent) {
+  if (e.ctrlKey) {
+    e.preventDefault();
+  }
+}
+
 export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimulatorProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef<number | null>(null);
@@ -44,6 +48,7 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
   const [isAnimating, setIsAnimating] = useState<boolean>(true);
   const [mode, setMode] = useState<'observe' | 'defend'>('observe');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1); // 1 = default, >1 = zoom in, <1 = zoom out
 
   // Orbital elements (Keplerian)
   const [orbitalElements, setOrbitalElements] = useState<OrbitalElements>({
@@ -86,9 +91,27 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
 
   // Use SimulationEngine for trajectory sampling
   const trajectory = useMemo(() => {
-    const timeSpan = 365 * 24 * 3600; // 1 year in seconds
-    return SimulationEngine.sampleTrajectory(simElements, 0, timeSpan, 200);
-  }, [simElements]);
+    // Instead of time-based, sample a full orbit in true anomaly for a closed ellipse
+    const points: { x: number; y: number; z: number }[] = [];
+    const steps = 360;
+    const a = orbitalElements.semiMajorAxis * AU_IN_KM;
+    const e = orbitalElements.eccentricity;
+    const inc = (orbitalElements.inclination * Math.PI) / 180;
+    const omega = (orbitalElements.argumentOfPeriapsis * Math.PI) / 180;
+    for (let i = 0; i <= steps; i++) {
+      const theta = (i / steps) * 2 * Math.PI;
+      // Polar equation of ellipse
+      const r = a * (1 - e * e) / (1 + e * Math.cos(theta));
+      // Perifocal coordinates
+      let x = r * Math.cos(theta);
+      let y = r * Math.sin(theta);
+      // Rotate by argument of periapsis and inclination (simplified, no RAAN)
+      const xRot = x * Math.cos(omega) - y * Math.sin(omega);
+      const yRot = (x * Math.sin(omega) + y * Math.cos(omega)) * Math.cos(inc);
+      points.push({ x: xRot, y: yRot, z: 0 });
+    }
+    return points;
+  }, [orbitalElements]);
 
   const collisionResult = useMemo(() => {
     return SimulationEngine.checkEarthCollision(trajectory);
@@ -130,7 +153,18 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Animation loop
+  // Handle mouse wheel for zoom
+  const handleWheel = (e: WheelEvent<HTMLCanvasElement>) => {
+    // Prevent browser zoom (especially on ctrl+wheel)
+    e.preventDefault();
+    setZoom(prev => {
+      let next = prev - e.deltaY * 0.001;
+      next = Math.max(0.2, Math.min(5, next));
+      return next;
+    });
+  };
+
+  // Animation loop (Sun-centered, Earth at 1 AU)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -141,12 +175,6 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
     let impactAnimationProgress = 0;
     let simulatePhase: 'idle' | 'animating' | 'impact' = 'idle';
     let animationStartTime = 0;
-
-    const startImpactAnimation = () => {
-      simulatePhase = 'animating';
-      impactAnimationProgress = 0;
-      animationStartTime = performance.now();
-    };
 
     const draw = () => {
       frame++;
@@ -166,49 +194,54 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
         ctx.fillRect(sx, sy, s.size, s.size);
       }
 
-      // Sun center
-      const sunX = w / 2;
-      const sunY = h / 2;
+      // Center of the canvas is the Sun
+      const centerX = w / 2;
+      const centerY = h / 2;
+      // Zoom logic: scale and pan so Earth is centered and zoomed
+      const baseScale = 110;
+      const scale = baseScale * zoom;
 
-      // Sun glow
-      const g = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
-      g.addColorStop(0, 'rgba(255,230,150,0.9)');
-      g.addColorStop(1, 'rgba(255,200,50,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
-      ctx.fill();
+      // Calculate Earth's position
+      const earthX = centerX + scale * 1;
+      const earthY = centerY;
 
-      // Earth's orbit
+      // If zoomed in, pan so Earth is at center
+      let offsetX = 0;
+      let offsetY = 0;
+      if (zoom > 1) {
+        offsetX = centerX - earthX;
+        offsetY = centerY - earthY;
+      }
+
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+
+      // Draw Earth's orbit (1 AU)
       ctx.strokeStyle = 'rgba(100,150,255,0.6)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(sunX, sunY, 140, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, scale * 1, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Earth
-      ctx.fillStyle = '#4A90E2';
-      ctx.beginPath();
-      ctx.arc(sunX + 140, sunY, 14, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Scale factor for trajectory visualization
-      const scale = 110; // pixels per AU
-      const earthX = sunX + 140;
-      const earthY = sunY;
-
-      // Draw trajectory path
+      // Draw asteroid trajectory (Sun-centered, closed ellipse)
       ctx.strokeStyle = collisionPredicted ? 'rgba(255,80,80,0.7)' : 'rgba(255,165,0,0.7)';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
       for (let i = 0; i < trajectory.length; i++) {
         const p = trajectory[i];
-        const px = sunX + (p.x / AU_IN_KM) * scale;
-        const py = sunY + (p.y / AU_IN_KM) * scale;
+        const px = centerX + (p.x / AU_IN_KM) * scale;
+        const py = centerY + (p.y / AU_IN_KM) * scale;
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
+      ctx.closePath();
       ctx.stroke();
+
+      // Draw Earth at 1 AU (x = 1 AU, y = 0)
+      ctx.fillStyle = '#4A90E2';
+      ctx.beginPath();
+      ctx.arc(centerX + scale * 1, centerY, 14 * zoom, 0, Math.PI * 2);
+      ctx.fill();
 
       // Asteroid current position
       let currentIdx = Math.floor((frame / 4) % trajectory.length);
@@ -227,9 +260,9 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
 
       // Draw asteroid at current position
       const ast = trajectory[Math.min(trajectory.length - 1, Math.max(0, currentIdx))];
-      const asteroidX = sunX + (ast.x / AU_IN_KM) * scale;
-      const asteroidY = sunY + (ast.y / AU_IN_KM) * scale;
-      const drawSize = Math.max(6, asteroidRadiusM / 12);
+      const asteroidX = centerX + (ast.x / AU_IN_KM) * scale;
+      const asteroidY = centerY + (ast.y / AU_IN_KM) * scale;
+      const drawSize = Math.max(2, Math.min(asteroidRadiusM / 12, 10)) * zoom;
 
       // Asteroid glow
       const ag = ctx.createRadialGradient(asteroidX, asteroidY, 0, asteroidX, asteroidY, drawSize * 2);
@@ -246,28 +279,29 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
       ctx.arc(asteroidX, asteroidY, drawSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Impact explosion animation
+      // Impact explosion animation (draw at Earth's position)
       if (simulatePhase === 'impact' && collisionPredicted) {
-        const maxR = Math.min(Math.max(w, h) / 1.5, 600);
+        const maxR = Math.min(Math.max(w, h) / 1.5, 600) * zoom;
         const ringR = impactAnimationProgress ? Math.min(maxR, impactAnimationProgress * maxR) : 0;
         ctx.strokeStyle = `rgba(255,90,50,${1 - impactAnimationProgress})`;
         ctx.lineWidth = 6 * (1 - impactAnimationProgress) + 1;
         ctx.beginPath();
-        ctx.arc(earthX, earthY, ringR, 0, Math.PI * 2);
+        ctx.arc(centerX + scale * 1, centerY, ringR, 0, Math.PI * 2);
         ctx.stroke();
 
         // Flash
         ctx.fillStyle = `rgba(255,200,120,${1 - impactAnimationProgress})`;
         ctx.beginPath();
-        ctx.arc(earthX, earthY, Math.min(100, ringR / 2), 0, Math.PI * 2);
+        ctx.arc(centerX + scale * 1, centerY, Math.min(100, ringR / 2), 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // HUD text
+      ctx.restore();
+
+      // HUD text (not zoomed)
       ctx.fillStyle = '#fff';
       ctx.font = '13px Inter, Arial';
       ctx.textAlign = 'left';
-      
       ctx.fillText(`a: ${orbitalElements.semiMajorAxis.toFixed(2)} AU`, 14, 44);
       ctx.fillText(`e: ${orbitalElements.eccentricity.toFixed(2)}`, 14, 62);
       ctx.fillText(`i: ${orbitalElements.inclination.toFixed(1)}°`, 14, 80);
@@ -290,44 +324,7 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [orbitalElements, asteroidRadiusM, velocityKmS, stars, collisionPredicted, impactPoint, timeToImpact, isAnimating, mode, trajectory]);
-
-  // Simplified orbital position helper
-  const calculateOrbitalPositionSimple = (t: number, elements: OrbitalElements) => {
-    const a = elements.semiMajorAxis;
-    const e = elements.eccentricity;
-    const inc = (elements.inclination * Math.PI) / 180;
-    const omega = (elements.argumentOfPeriapsis * Math.PI) / 180;
-
-    const theta = (t % (2 * Math.PI));
-    const r = a * (1 - e * e) / (1 + e * Math.cos(theta));
-    const xOrb = r * Math.cos(theta);
-    const yOrb = r * Math.sin(theta);
-
-    const x = xOrb * Math.cos(omega) - yOrb * Math.sin(omega) * Math.cos(inc);
-    const y = xOrb * Math.sin(omega) + yOrb * Math.cos(omega) * Math.cos(inc);
-    return { x, y };
-  };
-
-  // Handle Earth click
-  const handleEarthClick = (lat: number, lng: number) => {
-    setImpactPoint({ lat, lng });
-    setCollisionPredicted(true);
-  };
-
-  // Generate trajectory for 3D Earth
-  const generateAsteroidTrajectory = () => {
-    const trajectory = [];
-    const steps = 100;
-    
-    for (let i = 0; i < steps; i++) {
-      const t = (i / steps) * 2 * Math.PI;
-      const pos = calculateOrbitalPositionSimple(t, orbitalElements);
-      trajectory.push({ x: pos.x * 2, y: pos.y * 2, z: 0 });
-    }
-    
-    return trajectory;
-  };
+  }, [orbitalElements, asteroidRadiusM, velocityKmS, stars, collisionPredicted, impactPoint, timeToImpact, isAnimating, mode, trajectory, zoom]);
 
   // Simulate button handler
   const handleSimulate = async () => {
@@ -368,16 +365,21 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
 
       <div className="simulator-content">
         {/* Main visualization */}
-        <div className="visualization-container">
-          <div className="earth-3d-wrapper">
-            <Earth3D
-              asteroidTrajectory={generateAsteroidTrajectory()}
-              impactPoint={impactPoint || undefined}
-              onEarthClick={handleEarthClick}
-              className="orbital-earth-3d"
-            />
+        <div className="visualization-container" style={{ position: 'relative' }}>
+          <canvas
+            ref={canvasRef}
+            className="orbital-canvas"
+            style={{ width: '100%', height: 400, background: 'transparent', display: 'block' }}
+            width={800}
+            height={400}
+            tabIndex={0}
+            onWheel={handleWheel}
+            onMouseEnter={e => { e.currentTarget.addEventListener('wheel', preventWheel as any, { passive: false }); }}
+            onMouseLeave={e => { e.currentTarget.removeEventListener('wheel', preventWheel as any); }}
+          />
+          <div style={{position: 'absolute', top: 10, right: 20, color: '#fff', zIndex: 2, background: 'rgba(0,0,0,0.3)', borderRadius: 6, padding: '2px 10px', fontSize: 13}}>
+            Zoom: {(zoom * 100).toFixed(0)}%
           </div>
-          
           {/* Status panel */}
           <div className="status-panel">
             <div className={`collision-status ${collisionPredicted ? 'danger' : 'safe'}`}>

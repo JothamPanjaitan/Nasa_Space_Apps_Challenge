@@ -1,21 +1,42 @@
-/* Global Styles for NASA Space Apps Challenge - MeteorMadness */
-/* Consistent fonts, spacing, and layout across all components */
+/* Global Styles for NASA Space Apps Challenge - Meteor Madness: Defend Earth */
+/* Production-ready UI with scientific accuracy and visual richness */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Color Palette */
-  --primary: #ff8a00;
-  --primary-dark: #e67e00;
-  --secondary: #4a90e2;
-  --accent: #ff6b6b;
-  --success: #2ecc71;
-  --warning: #f39c12;
-  --danger: #e74c3c;
+  /* Primary Palette - Deep Space Blue */
+  --primary-900: #0B3D91;
+  --primary-800: #0D4AA8;
+  --primary-700: #1056BF;
+  --primary-600: #1562D6;
+  --primary-500: #1A6FED;
+  
+  /* Accent - Impact Orange */
+  --accent-500: #FF6B35;
+  --accent-600: #FF5722;
+  --accent-700: #E64A19;
+  
+  /* Muted UI Neutrals */
+  --muted-400: #8AA0C8;
+  --muted-500: #6B7FA0;
+  --muted-600: #4D5E78;
+  
+  /* Success - Safe Outcomes */
+  --success-500: #2CCB8B;
+  --success-600: #25A572;
+  --success-700: #1E7F59;
+  
+  /* Danger - Catastrophic */
+  --danger-600: #D93F3F;
+  --danger-700: #B32D2D;
+  --danger-800: #8C1F1F;
   
   /* Background Colors */
-  --bg-primary: #0b0c17;
-  --bg-secondary: #1a1d29;
-  --bg-card: #0f1724;
-  --bg-overlay: rgba(10, 12, 18, 0.85);
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1724;
+  --bg-card: #131b2e;
+  --bg-overlay: rgba(11, 61, 145, 0.15);
+  --bg-glass: rgba(19, 27, 46, 0.75);
   
   /* Text Colors */
   --text-primary: #e6eef8;
@@ -44,6 +65,7 @@
   
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
   --font-size-xs: 12px;
   --font-size-sm: 14px;
   --font-size-md: 16px;
@@ -57,10 +79,16 @@
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
   
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.3s ease;
-  --transition-slow: 0.5s ease;
+  /* Transitions - Smooth cubic bezier */
+  --transition-fast: 0.15s cubic-bezier(0.2, 0.9, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.2, 0.9, 0.2, 1);
+  
+  /* Glow Effects */
+  --glow-primary: 0 0 20px rgba(26, 111, 237, 0.4);
+  --glow-accent: 0 0 20px rgba(255, 107, 53, 0.4);
+  --glow-success: 0 0 20px rgba(44, 203, 139, 0.4);
+  --glow-danger: 0 0 20px rgba(217, 63, 63, 0.4);
 }
 
 /* Reset and Base Styles */
@@ -169,14 +197,25 @@ main {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: #04111a;
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%);
+  color: var(--text-primary);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glow-primary);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent-500) 0%, var(--accent-700) 100%);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-accent:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-accent);
 }
 
 .btn-secondary {
@@ -186,18 +225,52 @@ main {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--primary-600);
+  color: var(--primary-600);
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%);
+  background: linear-gradient(135deg, var(--danger-600) 0%, var(--danger-800) 100%);
   color: white;
 }
 
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-danger);
+}
+
 .btn-success {
-  background: linear-gradient(135deg, var(--success) 0%, #27ae60 100%);
+  background: linear-gradient(135deg, var(--success-500) 0%, var(--success-700) 100%);
   color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-success);
+}
+
+/* Stat Blocks - Monospace for data */
+.stat-block {
+  font-family: var(--font-mono);
+  background: var(--bg-card);
+  border: 1px solid rgba(138, 160, 200, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--accent-500);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Form Elements */
@@ -486,3 +559,172 @@ main {
     color: black !important;
   }
 }
+
+/* Glassmorphism Effects */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(138, 160, 200, 0.15);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Planet Glow Effect */
+.planet-glow {
+  position: relative;
+}
+
+.planet-glow::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  right: -10%;
+  bottom: -10%;
+  background: radial-gradient(circle, var(--primary-600) 0%, transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Orbital Line Animation */
+@keyframes orbitPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.orbital-line {
+  animation: orbitPulse 3s ease-in-out infinite;
+}
+
+/* Impact Burst Animation */
+@keyframes impactBurst {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.impact-burst {
+  animation: impactBurst 0.8s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+
+/* Starfield Background */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.starfield {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(2px 2px at 20% 30%, white, transparent),
+    radial-gradient(2px 2px at 60% 70%, white, transparent),
+    radial-gradient(1px 1px at 50% 50%, white, transparent),
+    radial-gradient(1px 1px at 80% 10%, white, transparent),
+    radial-gradient(2px 2px at 90% 60%, white, transparent),
+    radial-gradient(1px 1px at 33% 80%, white, transparent),
+    radial-gradient(1px 1px at 15% 90%, white, transparent);
+  background-size: 200% 200%;
+  animation: twinkle 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HUD Display */
+.hud-display {
+  font-family: var(--font-mono);
+  background: rgba(11, 61, 145, 0.2);
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--primary-500);
+  font-size: var(--font-size-sm);
+  text-shadow: 0 0 10px rgba(26, 111, 237, 0.5);
+}
+
+/* Badge System */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-savior {
+  background: linear-gradient(135deg, var(--success-500), var(--success-700));
+  color: white;
+  box-shadow: var(--glow-success);
+}
+
+.badge-strategist {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
+  color: white;
+  box-shadow: var(--glow-primary);
+}
+
+.badge-economist {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #1a1d29;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-fast);
+  z-index: 1000;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Damage Ring Visualization */
+.damage-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid;
+  pointer-events: none;
+  animation: ringPulse 2s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+.damage-ring-blast { border-color: var(--danger-600); }
+.damage-ring-thermal { border-color: var(--accent-500); }
+.damage-ring-seismic { border-color: var(--muted-400); }

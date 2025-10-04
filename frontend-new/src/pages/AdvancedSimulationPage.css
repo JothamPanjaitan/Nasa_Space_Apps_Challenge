@@ -1,0 +1,148 @@
+.advanced-simulation-page {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.report-options-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.report-options-modal {
+  background: linear-gradient(180deg, #1a1f3a 0%, #0f1229 100%);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.report-options-modal h2 {
+  color: #4fc3f7;
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  text-align: center;
+}
+
+.report-options-modal p {
+  color: #b0bec5;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.report-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.report-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #fff;
+  text-align: left;
+}
+
+.report-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #4fc3f7;
+  transform: translateX(5px);
+}
+
+.report-btn .icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.report-btn .label {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4fc3f7;
+  margin-bottom: 5px;
+}
+
+.report-btn .desc {
+  font-size: 13px;
+  color: #b0bec5;
+}
+
+.report-btn.pdf:hover {
+  border-color: #f44336;
+}
+
+.report-btn.pdf .label {
+  color: #f44336;
+}
+
+.report-btn.html:hover {
+  border-color: #4caf50;
+}
+
+.report-btn.html .label {
+  color: #4caf50;
+}
+
+.report-btn.csv:hover {
+  border-color: #ff9800;
+}
+
+.report-btn.csv .label {
+  color: #ff9800;
+}
+
+.close-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #4fc3f7;
+}

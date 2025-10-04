@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SimulationEngine, type ImpactData } from '../services/simulationEngine';
 import './MitigationPage.css';
 
@@ -69,6 +69,7 @@ const MITIGATION_STRATEGIES: MitigationStrategy[] = [
 
 export default function MitigationPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const state: any = location.state ?? {};
   const impactData: ImpactData | null = state.impactData ?? null;
   const params: any = state.params ?? null;
@@ -76,33 +77,35 @@ export default function MitigationPage() {
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
   const [simulationResults, setSimulationResults] = useState<any>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [showEmergencyPlan, setShowEmergencyPlan] = useState(false);
 
   // Calculate deflection parameters for selected strategies
-  const deflectionResults = useState(() => {
-  if (!impactData || !params) return null;
+  const deflectionResults = useMemo(() => {
+    if (!impactData || !params || selectedStrategies.length === 0) return [];
 
-  const asteroidMass = (4/3) * Math.PI * Math.pow(params.size, 3) * (params.density || 2600);
-  const timeToImpact = params.timeToImpact || 365;
+    const asteroidMass = (4/3) * Math.PI * Math.pow(params.size, 3) * (params.density || 2600);
+    const timeToImpact = params.timeToImpact || 365;
 
-  return selectedStrategies.map(strategyId => {
-    const strategy = MITIGATION_STRATEGIES.find(s => s.id === strategyId);
-    if (!strategy) return null;
+    return selectedStrategies.map(strategyId => {
+      const strategy = MITIGATION_STRATEGIES.find(s => s.id === strategyId);
+      if (!strategy) return null;
 
-    const deltaV = strategy.effectiveness * 0.1; // m/s
-    const deflection = SimulationEngine.calculateDeflectionParameters(asteroidMass, deltaV, timeToImpact);
+      const deltaV = strategy.effectiveness * 0.1; // m/s
+      const deflection = SimulationEngine.calculateDeflectionParameters(asteroidMass, deltaV, timeToImpact);
 
-    return {
-      strategy,
-      deflection,
-      success: deflection.deflectionDistance > 1000 // 1km minimum deflection
-    };
-  }).filter(Boolean);
-})[0];
+      return {
+        strategy,
+        deflection,
+        success: deflection.deflectionDistance > 1000 // 1km minimum deflection
+      };
+    }).filter(Boolean);
+  }, [impactData, params, selectedStrategies]);
 
-const environmentalEffects = useState(() => {
-  if (!impactData) return null;
-  return SimulationEngine.calculateEnvironmentalEffects(impactData.energy);
-})[0];
+  const environmentalEffects = useMemo(() => {
+    if (!impactData) return null;
+    return SimulationEngine.calculateEnvironmentalEffects(impactData.energy);
+  }, [impactData]);
 
   const handleStrategyToggle = (strategyId: string) => {
     setSelectedStrategies(prev => 
@@ -149,6 +152,30 @@ const environmentalEffects = useState(() => {
     if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
     if (amount >= 1e6) return `$${(amount / 1e6).toFixed(0)}M`;
     return `$${amount.toLocaleString()}`;
+  };
+
+  const handleCompareStrategies = () => {
+    setShowComparison(!showComparison);
+  };
+
+  const handleImplementStrategies = () => {
+    if (selectedStrategies.length === 0) {
+      alert('Please select at least one strategy to implement.');
+      return;
+    }
+    
+    // Navigate to game mode with selected strategies
+    navigate('/game', {
+      state: {
+        strategies: selectedStrategies,
+        impactData,
+        params
+      }
+    });
+  };
+
+  const handleEmergencyResponse = () => {
+    setShowEmergencyPlan(!showEmergencyPlan);
   };
 
   return (
@@ -308,16 +335,91 @@ const environmentalEffects = useState(() => {
           </section>
         </div>
 
+        {/* Strategy Comparison */}
+        {showComparison && selectedStrategies.length > 0 && (
+          <section className="strategy-comparison">
+            <h2>📊 Strategy Comparison</h2>
+            <div className="comparison-table">
+              <div className="comparison-header">
+                <div>Strategy</div>
+                <div>Effectiveness</div>
+                <div>Cost</div>
+                <div>Time</div>
+                <div>Risk</div>
+              </div>
+              {selectedStrategies.map(id => {
+                const strategy = MITIGATION_STRATEGIES.find(s => s.id === id);
+                return strategy ? (
+                  <div key={id} className="comparison-row">
+                    <div>{strategy.icon} {strategy.name}</div>
+                    <div>{(strategy.effectiveness * 100).toFixed(0)}%</div>
+                    <div>{formatCurrency(strategy.cost)}</div>
+                    <div>{strategy.timeRequired} days</div>
+                    <div className={`risk-${strategy.risk}`}>{strategy.risk}</div>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Emergency Response Plan */}
+        {showEmergencyPlan && (
+          <section className="emergency-plan">
+            <h2>🆘 Emergency Response Plan</h2>
+            <div className="emergency-content">
+              <div className="emergency-phase">
+                <h3>⚡ Immediate Response (0-24 hours)</h3>
+                <ul>
+                  <li>Activate global early warning systems</li>
+                  <li>Issue public emergency broadcasts</li>
+                  <li>Begin evacuation of high-risk areas</li>
+                  <li>Mobilize international space agencies</li>
+                </ul>
+              </div>
+              <div className="emergency-phase">
+                <h3>🚀 Short-term Actions (1-30 days)</h3>
+                <ul>
+                  <li>Deploy emergency deflection missions</li>
+                  <li>Establish refugee support centers</li>
+                  <li>Coordinate international relief efforts</li>
+                  <li>Prepare medical and rescue teams</li>
+                </ul>
+              </div>
+              <div className="emergency-phase">
+                <h3>🛡️ Long-term Recovery (30+ days)</h3>
+                <ul>
+                  <li>Assess and repair infrastructure damage</li>
+                  <li>Provide ongoing humanitarian aid</li>
+                  <li>Implement economic recovery programs</li>
+                  <li>Review and improve planetary defense</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Action Buttons */}
         <div className="action-buttons">
-          <button className="btn btn-secondary">
-            📊 Compare Strategies
+          <button 
+            className="btn btn-secondary"
+            onClick={handleCompareStrategies}
+            disabled={selectedStrategies.length === 0}
+          >
+            📊 {showComparison ? 'Hide' : 'Compare'} Strategies
           </button>
-          <button className="btn btn-primary">
+          <button 
+            className="btn btn-primary"
+            onClick={handleImplementStrategies}
+            disabled={selectedStrategies.length === 0}
+          >
             🚀 Implement Selected Strategies
           </button>
-          <button className="btn btn-danger">
-            🆘 Emergency Response Plan
+          <button 
+            className="btn btn-danger"
+            onClick={handleEmergencyResponse}
+          >
+            🆘 {showEmergencyPlan ? 'Hide' : 'Show'} Emergency Response Plan
           </button>
         </div>
       </div>
