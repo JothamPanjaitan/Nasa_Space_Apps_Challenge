@@ -1,0 +1,329 @@
+.story-intro {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0c0c0c 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.space-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 3s linear infinite;
+}
+
+.star-0 {
+  width: 1px;
+  height: 1px;
+  animation-delay: 0s;
+}
+
+.star-1 {
+  width: 2px;
+  height: 2px;
+  animation-delay: 1s;
+}
+
+.star-2 {
+  width: 3px;
+  height: 3px;
+  animation-delay: 2s;
+}
+
+.star:nth-child(odd) {
+  top: 20%;
+  left: 15%;
+}
+
+.star:nth-child(even) {
+  top: 60%;
+  left: 80%;
+}
+
+/* Earth */
+.earth {
+  position: absolute;
+  top: 50%;
+  left: 20%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.earth-glow {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 40% 40%, #0a3a75, #1a4b8a, #2a5ba5);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 50px rgba(26, 91, 165, 0.5);
+  animation: rotate 20s linear infinite;
+}
+
+.earth-surface {
+  position: absolute;
+  top: 15%;
+  left: 25%;
+  width: 30px;
+  height: 20px;
+  background: radial-gradient(ellipse, #4a6741, #2d4a1e);
+  border-radius: 50%;
+  transform: rotate(15deg);
+  opacity: 0.9;
+}
+
+/* Asteroid */
+.asteroid {
+  position: absolute;
+  top: 25%;
+  right: 15%;
+  z-index: 3;
+  transition: all 3s ease-out;
+}
+
+.asteroid.transitioning {
+  transform: translateX(-400px) translateY(300px);
+}
+
+.asteroid-glow {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, #ff6b35, #ff4700, #cc3a00);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.6);
+  animation: asteroid-pulse 2s ease-in-out infinite alternate;
+}
+
+.asteroid-body {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle at 30% 30%, #ff8c42, #c94c04, #8b3a00);
+  border-radius: 70% 30% 60% 40%;
+  animation: asteroid-spin 4s linear infinite;
+}
+
+.story-content {
+  position: relative;
+  z-index: 10;
+  max-width: 800px;
+  padding: 40px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(20, 20, 40, 0.85) 100%);
+  border-radius: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  transition: all 1s ease;
+}
+
+.fade-out {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.fade-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.story-frame h1 {
+  margin: 0 0 30px 0;
+  font-size: 2.5rem;
+  background: linear-gradient(45deg, #ff6b35, #ffa500, #ffff00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+}
+
+.story-text {
+  margin-top: 30px;
+}
+
+.story-text p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: #e0e0e0;
+  margin-bottom: 30px;
+}
+
+.fact-box {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.fact-box h3 {
+  color: #ffa500;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+}
+
+.fact-box pre {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #b0b0b0;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.choice-question {
+  font-size: 1.3rem;
+  margin-bottom: 30px;
+  color: #f0f0f0;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.choice-btn {
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  background: linear-gradient(45deg, #0a3a75, #1a4b8a, #2a5ba5);
+  border: none;
+  border-radius: 25px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(26, 91, 165, 0.3);
+  border: 2px solid transparent;
+  width: 250px;
+}
+
+.choice-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(26, 91, 165, 0.4);
+  background: linear-gradient(45deg, #1a4b8a, #2a5ba5, #3b6bb5);
+}
+
+.choice-btn.selected {
+  border-color: #ffa500;
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
+  transform: scale(1.05);
+}
+
+.continue-btn {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  background: linear-gradient(45deg, #ff6b35, #ffa500);
+  border: none;
+  border-radius: 25px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+  margin-top: 20px;
+}
+
+.continue-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 20px rgba(255, 107, 53, 0.4);
+}
+
+.progress-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: linear-gradient(45deg, #ff6b35, #ffa500);
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+  transform: scale(1.2);
+}
+
+/* Animations */
+@keyframes twinkle {
+ 0%, 100% { opacity: 0.3; }
+ 50% { opacity: 1; }
+}
+
+@keyframes rotate {
+ from { transform: rotate(0deg); }
+ to { transform: rotate(360deg); }
+}
+
+@keyframes asteroid-pulse {
+ 0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 107, 53, 0.6); }
+ 100% { transform: scale(1.1); box-shadow: 0 0 40px rgba(255, 107, 53, 0.8); }
+}
+
+@keyframes asteroid-spin {
+ from { transform: rotate(0deg); }
+ to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+ .story-content {
+  margin: 20px;
+  padding: 30px 20px;
+ }
+ 
+ .story-frame h1 {
+  font-size: 2rem;
+ }
+ 
+ .story-text p {
+  font-size: 1rem;
+ }
+ 
+ .choices {
+  gap: 10px;
+ }
+ 
+ .choice-btn {
+  width: 200px;
+  padding: 12px 20px;
+  font-size: 1rem;
+ }
+ 
+ .earth {
+  left: 50%;
+  transform: translate(-50%, -50%);
+ }
+ 
+ .asteroid {
+  top: 10%;
+  right: 10%;
+ }
+}

@@ -1,0 +1,424 @@
+.orbital-simulator {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0c0c0c 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.simulator-header {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 10;
+}
+
+.simulator-header h2 {
+  font-size: 2.5rem;
+  background: linear-gradient(45deg, #00d4ff, #ff6b35, #ffa500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+  text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+}
+
+.simulator-header p {
+  color: #e0e0e0;
+  font-size: 1.1rem;
+}
+
+.simulator-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 30px;
+  width: 95%;
+  max-width: 1500px;
+  height: 100vh;
+  padding-top: 120px;
+  padding-bottom: 40px;
+}
+
+.visualization-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(0, 212, 255, 0.2);
+}
+
+.orbital-canvas {
+  width: 100%;
+  height: 600px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  background: radial-gradient(ellipse at center, #000011 0%, #000033 100%);
+  cursor: crosshair;
+}
+
+.status-panel {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.collision-status {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.collision-status.danger {
+  background: linear-gradient(45deg, #ff4757, #ff3742);
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
+  animation: danger-pulse 2s ease-in-out infinite alternate;
+}
+
+.collision-status.safe {
+  background: linear-gradient(45deg, #2ed573, #1ed760);
+  color: white;
+  box-shadow: 0 0 20px rgba(46, 213, 115, 0.4);
+}
+
+.time-display {
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.control-sidebar {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 25px;
+  border-radius: 20px;
+  border: 2px solid rgba(255, 107, 53, 0.2);
+  height: fit-content;
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+}
+
+.control-section {
+  margin-bottom: 30px;
+}
+
+.control-section h3 {
+  margin-bottom: 20px;
+  color: #00d4ff;
+  text-align: center;
+  font-size: 1.3rem;
+  border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+  padding-bottom: 10px;
+}
+
+.control-section h4 {
+  margin: 20px 0 15px 0;
+  color: #ff6b35;
+  font-size: 1.1rem;
+}
+
+.control-group {
+  margin-bottom: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.control-group:hover {
+  background: rgba(0, 212, 255, 0.05);
+  border-color: rgba(0, 212, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #374151, #6b7280);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 10px 0;
+  transition: all 0.3s ease;
+}
+
+.slider:hover {
+  transform: scaleY(1.2);
+  background: linear-gradient(to right, #4b5563, #9ca3af);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+}
+
+.asteroid-slider::-webkit-slider-thumb {
+  background: linear-gradient(45deg, #ffa500, #ff8c00);
+}
+
+.density-slider::-webkit-slider-thumb {
+  background: linear-gradient(45deg, #ff6b35, #ff4757);
+}
+
+.time-slider::-webkit-slider-thumb {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+}
+
+.slider-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 5px;
+}
+
+.region-select {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.region-select:hover {
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.1);
+}
+
+.region-select option {
+  background: #1a1a2e;
+  color: white;
+}
+
+.impact-preview {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(255, 71, 87, 0.1);
+  border-radius: 15px;
+  border: 2px solid rgba(255, 71, 87, 0.3);
+}
+
+.impact-preview h3 {
+  margin: 0 0 15px 0;
+  color: #ff4757;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.collision-status {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+.impact-details {
+  margin-top: 15px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.simulate-button {
+  width: 100%;
+  padding: 18px;
+  font-size: 1.2rem;
+  background: linear-gradient(45deg, #00d4ff, #ff6b35);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+  font-weight: bold;
+  margin-top: 30px;
+}
+
+.simulate-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(0, 212, 255, 0.4);
+}
+
+.simulate-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+}
+
+/* Educational tooltips */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+  color: #00d4ff;
+  border-bottom: 1px dotted #00d4ff;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 100;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.8rem;
+  border: 1px solid #00d4ff;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Loading animation */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top: 4px solid #00d4ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.loading-text {
+  color: #00d4ff;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes danger-pulse {
+  0% { box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); }
+  100% { box-shadow: 0 0 30px rgba(255, 71, 87, 0.8); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .simulator-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .control-sidebar {
+    order: -1;
+    max-height: none;
+  }
+  
+  .orbital-canvas {
+    height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .simulator-header h2 {
+    font-size: 2rem;
+  }
+  
+  .simulator-header p {
+    font-size: 1rem;
+  }
+  
+  .orbital-canvas {
+    height: 400px;
+  }
+  
+  .simulator-content {
+    padding-top: 100px;
+  }
+  
+  .control-sidebar {
+    padding: 20px;
+  }
+
+  .control-section h3 {
+    font-size: 1.2rem;
+  }
+}

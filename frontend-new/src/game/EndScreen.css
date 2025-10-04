@@ -1,0 +1,559 @@
+.end-screen {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(26, 26, 46, 0.95) 0%,
+    rgba(22, 33, 62, 0.95) 50%,
+    rgba(12, 12, 28, 0.95) 100%
+  );
+  overflow-y: auto;
+}
+
+.space-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 4s linear infinite;
+}
+
+.star-0 {
+  width: 1px;
+  height: 1px;
+  animation-delay: 0s;
+}
+
+.star-1 {
+  width: 2px;
+  height: 2px;
+  animation-delay: 1s;
+}
+
+.star-2 {
+  width: 3px;
+  height: 3px;
+  animation-delay: 2s;
+}
+
+/* Earth */
+.earth-final {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.earth-glow {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 40% 40%, #0a3a75, #1a4b8a, #2a5ba5);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 40px rgba(26, 91, 165, 0.6);
+  animation: planet-final-pulse 4s ease-in-out infinite;
+  transition: all 2s ease;
+}
+
+.earth-glow.safe {
+  box-shadow: 0 0 50px rgba(34, 197, 94, 0.8);
+}
+
+.earth-glow.scarred {
+  box-shadow: 0 0 50px rgba(239, 68, 68, 0.8);
+}
+
+.earth-surface {
+  position: absolute;
+  top: 20%;
+  left: 25%;
+  width: 35px;
+  height: 25px;
+  background: radial-gradient(ellipse, #4a6741, #2d4a1e);
+  border-radius: 50%;
+  transform: rotate(15deg);
+  opacity: 0.9;
+}
+
+.impact-crater {
+  position: absolute;
+  top: 60%;
+  right: 30%;
+  width: 20px;
+  height: 15px;
+  background: radial-gradient(ellipse, #8b5a00, #5d3a00);
+  border-radius: 60% 40% 70% 30%;
+  opacity: 0.8;
+}
+
+/* Nebula effects */
+.nebula {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.15;
+  animation: nebula-final-drift 25s linear infinite;
+}
+
+.nebula-1 {
+  width: 400px;
+  height: 200px;
+  background: radial-gradient(ellipse, rgba(147, 51, 234, 0.4), rgba(99, 102, 241, 0.2));
+  top: 15%;
+  left: -5%;
+  animation-delay: 0s;
+}
+
+.nebula-2 {
+  width: 350px;
+  height: 175px;
+  background: radial-gradient(ellipse, rgba(34, 197, 94, 0.3), rgba(16, 185, 129, 0.2));
+  bottom: 10%;
+  right: -5%;
+  animation-delay: 12s;
+}
+
+.ending-content {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  padding: 40px;
+  color: white;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 25px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  margin: 20px;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.final-summary h1 {
+  font-size: 3rem;
+  margin-bottom: 30px;
+  background: linear-gradient(45deg, #ffd700, #ffa500, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+}
+
+.outcome-message {
+  margin-bottom: 40px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  border-left: 5px solid;
+}
+
+.success-outcome {
+  border-left-color: #22c55e;
+}
+
+.mitigation-outcome {
+  border-left-color: #3b82f6;
+}
+
+.exploration-outcome {
+  border-left-color: #ffd700;
+}
+
+.outcome-message h2 {
+  margin: 0 0 20px 0;
+  font-size: 2rem;
+  color: #fff;
+}
+
+.outcome-message p {
+  color: #e0e7ff;
+  line-height: 1.6;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.final-score {
+  margin-bottom: 40px;
+  padding: 25px;
+  background: rgba(147, 51, 234, 0.1);
+  border-radius: 15px;
+  border: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+.final-score h3 {
+  margin: 0 0 20px 0;
+  font-size: 2rem;
+  color: #ffd700;
+}
+
+.score-breakdown {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.score-breakdown p {
+  margin: 8px 0;
+  color: #e0e7ff;
+  font-size: 1rem;
+}
+
+.achievements {
+  margin-bottom: 40px;
+}
+
+.achievements h3 {
+  margin: 0 0 25px 0;
+  font-size: 1.8rem;
+  color: #ffd700;
+}
+
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  justify-content: center;
+}
+
+.badge-card {
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.badge-card.earned {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  transform: scale(1);
+}
+
+.badge-card.earned:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.badge-card.locked {
+  background: rgba(116, 116, 116, 0.1);
+  border-color: rgba(116, 116, 116, 0.3);
+  opacity: 0.6;
+}
+
+.badge-icon {
+  font-size: 1.8rem;
+  min-width: 40px;
+}
+
+.badge-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.badge-name {
+  font-weight: bold;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.badge-description {
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.final-message {
+  margin-bottom: 40px;
+}
+
+.quote {
+  margin-bottom: 30px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  border-left: 4px solid #ffd700;
+}
+
+.quote blockquote {
+  font-style: italic;
+  color: #e0e7ff;
+  font-size: 1.2rem;
+  margin: 0 0 10px 0;
+  line-height: 1.6;
+}
+
+.quote cite {
+  color: #ffd700;
+  font-size: 0.9rem;
+}
+
+.data-attribution {
+  background: rgba(59, 130, 246, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.data-attribution h4 {
+  margin: 0 0 15px 0;
+  color: #60a5fa;
+  font-size: 1.2rem;
+}
+
+.data-list {
+  text-align: left;
+  margin: 0;
+}
+
+.data-list p {
+  margin: 8px 0;
+  color: #c7d2fe;
+  font-size: 0.9rem;
+}
+
+.game-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.game-actions button {
+  padding: 15px 25px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  min-width: 180px;
+}
+
+.play-again-btn {
+  background: linear-gradient(45deg, #10b981, #3b82f6);
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}
+
+.play-again-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.view-report-btn {
+  background: linear-gradient(45deg, #f59e0b, #fb923c);
+  box-shadow: 0 5px 15px rgba(251, 146, 60, 0.3);
+}
+
+.view-report-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(251, 146, 60, 0.4);
+}
+
+.go-home-btn {
+  background: linear-gradient(45deg, #8b5cf6, #a855f7);
+  box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
+}
+
+.go-home-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+}
+
+/* Report Mode Styles */
+.end-screen.report-mode .ending-content {
+  max-width: 1200px;
+  text-align: left;
+}
+
+.report-content h1 {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 30px;
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.report-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.report-section {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #3b82f6;
+}
+
+.report-section h3 {
+  margin: 0 0 15px 0;
+  color: #60a5fa;
+  font-size: 1.3rem;
+}
+
+.report-data p {
+  margin: 8px 0;
+  color: #e0e7ff;
+  font-size: 1rem;
+}
+
+.report-data strong {
+  color: #fff;
+}
+
+.data-sources {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.data-sources li {
+  margin: 8px 0;
+  color: #e0e7ff;
+  font-size: 0.9rem;
+}
+
+.report-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.badge-earned {
+  background: rgba(34, 197, 94, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-earned .badge-icon {
+  font-size: 1.5rem;
+}
+
+.report-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.report-actions button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+.download-report-btn {
+  background: linear-gradient(45deg, #10b981, #059669);
+}
+
+.share-outcome-btn {
+  background: linear-gradient(45deg, #3b82f6, #2563eb);
+}
+
+.back-to-summary-btn {
+  background: linear-gradient(45deg, #6b7280, #4b5563);
+}
+
+/* Animations */
+@keyframes twinkle {
+ 0%, 100% { 
+   opacity: 0.3; 
+   transform: scale(1);
+ }
+ 50% { 
+   opacity: 1; 
+   transform: scale(1.1);
+ }
+}
+
+@keyframes planet-final-pulse {
+ 0%, 100% { 
+   transform: scale(1); 
+ }
+ 50% { 
+   transform: scale(1.05); 
+ }
+}
+
+@keyframes nebula-final-drift {
+ 0% { 
+   transform: translateX(0) translateY(0) rotate(0deg);
+ }
+ 50% { 
+   transform: translateX(30px) translateY(20px) rotate(180deg);
+ }
+ 100% { 
+   transform: translateX(0) translateY(0) rotate(360deg);
+ }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+ .ending-content {
+  padding: 20px;
+  margin: 10px;
+ }
+ 
+ .final-summary h1 {
+  font-size: 2rem;
+ }
+ 
+ .outcome-message h2 {
+  font-size: 1.5rem;
+ }
+ 
+ .outcome-message p {
+  font-size: 1rem;
+ }
+ 
+ .badges-grid {
+  grid-template-columns: 1fr;
+ }
+ 
+ .game-actions {
+  flex-direction: column;
+  align-items: center;
+ }
+ 
+ .game-actions button {
+  width: 100%;
+  max-width: 300px;
+ }
+}

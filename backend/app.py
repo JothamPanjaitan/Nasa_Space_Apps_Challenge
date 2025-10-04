@@ -2,7 +2,12 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 import math
-from impact import calculate_mass, calculate_kinetic_energy, calculate_tnt_equivalent, calculate_crater_diameter, energy_to_magnitude
+from impact import (
+    calculate_mass, calculate_kinetic_energy, calculate_tnt_equivalent, 
+    calculate_crater_diameter, energy_to_magnitude, calculate_blast_radius,
+    calculate_thermal_radius, calculate_seismic_radius, calculate_tsunami_radius,
+    calculate_indirect_effects, calculate_casualties, calculate_infrastructure_damage
+)
 from nasa_api import AsteroidProcessor, OrbitalMechanics
 from ml_models import impact_predictor, deflection_optimizer, adaptive_difficulty, initialize_ml_models
 
@@ -119,7 +124,7 @@ def get_hazardous_asteroids():
 
 @app.route('/api/simulate', methods=['POST'])
 def simulate_impact():
-    """Simulate asteroid impact effects"""
+    """Simulate asteroid impact effects with enhanced calculations"""
     data = request.get_json()
     
     # Use provided data or sample asteroid
@@ -128,13 +133,34 @@ def simulate_impact():
     density = data.get('density', 2600)  # kg/m³
     impact_lat = data.get('impact_lat', 25.7617)  # Miami default
     impact_lon = data.get('impact_lon', -80.1918)
+    impact_region = data.get('impact_region', 'land')  # land/ocean/urban
+    population_density = data.get('population_density', 100)  # people per km²
     
-    # Calculate impact effects
+    # Calculate basic impact effects
     mass = calculate_mass(diameter, density)
     kinetic_energy = calculate_kinetic_energy(mass, velocity)
     tnt_equivalent = calculate_tnt_equivalent(kinetic_energy)
     crater_diameter = calculate_crater_diameter(diameter, velocity, density)
     magnitude = energy_to_magnitude(kinetic_energy)
+    
+    # Calculate direct effects
+    blast_radius = calculate_blast_radius(tnt_equivalent)
+    thermal_radius = calculate_thermal_radius(tnt_equivalent)
+    seismic_radius = calculate_seismic_radius(tnt_equivalent)
+    
+    # Calculate tsunami effects (if ocean impact)
+    tsunami_radius = None
+    if impact_region == 'ocean':
+        tsunami_radius = calculate_tsunami_radius(tnt_equivalent)
+    
+    # Calculate indirect effects
+    indirect_effects = calculate_indirect_effects(tnt_equivalent, impact_region)
+    
+    # Calculate casualties
+    casualties = calculate_casualties(blast_radius, population_density, impact_region)
+    
+    # Calculate infrastructure damage
+    infrastructure_damage = calculate_infrastructure_damage(blast_radius, thermal_radius, seismic_radius)
     
     result = {
         "asteroid": {
@@ -153,11 +179,24 @@ def simulate_impact():
             "crater_diameter": crater_diameter,
             "earthquake_magnitude": magnitude
         },
-        "effects": {
-            "blast_radius": min(crater_diameter * 10, 1000),  # km
-            "thermal_radius": min(crater_diameter * 5, 500),  # km
-            "seismic_radius": min(crater_diameter * 20, 2000)  # km
-        }
+        "direct_effects": {
+            "blast_radius": blast_radius / 1000,  # Convert to km
+            "thermal_radius": thermal_radius / 1000,  # Convert to km
+            "seismic_radius": seismic_radius / 1000,  # Convert to km
+            "tsunami_radius": tsunami_radius / 1000 if tsunami_radius else None  # Convert to km
+        },
+        "indirect_effects": {
+            "economic_radius": indirect_effects["economic_radius"] / 1000,  # Convert to km
+            "environmental_radius": indirect_effects["environmental_radius"] / 1000,  # Convert to km
+            "health_radius": indirect_effects["health_radius"] / 1000,  # Convert to km
+            "governance_radius": indirect_effects["governance_radius"] / 1000  # Convert to km
+        },
+        "casualties": {
+            "estimated_casualties": casualties,
+            "population_density": population_density,
+            "impact_region": impact_region
+        },
+        "infrastructure_damage": infrastructure_damage
     }
     
     return jsonify(result)

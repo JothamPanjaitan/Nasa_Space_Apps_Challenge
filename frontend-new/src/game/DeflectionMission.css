@@ -1,0 +1,485 @@
+.deflection-mission {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0c0c0c 100%);
+  color: white;
+  overflow: hidden;
+}
+
+.space-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 3s linear infinite;
+}
+
+.star-0 {
+  width: 1px;
+  height: 1px;
+  animation-delay: 0s;
+}
+
+.star-1 {
+  width: 2px;
+  height: 2px;
+  animation-delay: 1s;
+}
+
+.star-2 {
+  width: 3px;
+  height: 3px;
+  animation-delay: 2s;
+}
+
+/* Earth */
+.earth-distant {
+  position: absolute;
+  top: 60%;
+  right: 15%;
+  z-index: 2;
+}
+
+.earth-glow {
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle at 40% 40%, #0a3a75, #1a4b8a, #2a5ba5);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 30px rgba(26, 91, 165, 0.4);
+  animation: rotate 20s linear infinite;
+}
+
+.earth-surface {
+  position: absolute;
+  top: 20%;
+  left: 30%;
+  width: 25px;
+  height: 15px;
+  background: radial-gradient(ellipse, #4a6741, #2d4a1e);
+  border-radius: 50%;
+  transform: rotate(15deg);
+  opacity: 0.9;
+}
+
+.mission-content {
+  position: relative;
+  z-index: 10;
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.visualization-section {
+  margin-bottom: 30px;
+}
+
+h2 {
+  font-size: 2.5rem;
+  background: linear-gradient(45deg, #ffd700, #ffa500, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.mission-visualization {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+canvas {
+  width: 100%;
+  height: 350px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: radial-gradient(ellipse at center, #000011 0%, #000033 100%);
+}
+
+.mission-status {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(26, 91, 165, 0.1);
+  border-radius: 10px;
+  border-left: 4px solid #ffd700;
+}
+
+.mission-status h4 {
+  margin: 0 0 10px 0;
+  color: #ffd700;
+}
+
+.mission-controls {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 30px;
+  border-radius: 20px;
+  border: 2px solid rgba(255, 107, 53, 0.2);
+}
+
+.mission-controls h3 {
+  margin-bottom: 25px;
+  color: #ff6b35;
+  text-align: center;
+}
+
+.mission-setup {
+  margin-bottom: 30px;
+}
+
+.mission-setup h4 {
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+.mission-methods {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.method-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  width: 150px;
+  transition: all 0.3s ease;
+}
+
+.method-card:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+  transform: translateY(-5px);
+}
+
+.method-card h5 {
+  margin: 0 0 10px 0;
+  color: #ffd700;
+  font-size: 1.1rem;
+}
+
+.method-card p {
+  margin: 0 0 15px 0;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.effort-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.effort-badge.low {
+  background: linear-gradient(45deg, #4ade80, #22c55e);
+  color: white;
+}
+
+.effort-badge.medium {
+  background: linear-gradient(45deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.effort-badge.high {
+  background: linear-gradient(45deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.parameter-controls {
+  margin-bottom: 30px;
+}
+
+.control-group {
+  margin-bottom: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+input[type="range"] {
+  height: 6px;
+  border-radius: 3px;
+  background: #333;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #ffd700, #ffa500);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.control-group span {
+  display: block;
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.mission-plan {
+  margin-bottom: 30px;
+}
+
+.mission-plan h4 {
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+.plan-details {
+  background: rgba(26, 165, 53, 0.1);
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 4px solid #4ade80;
+}
+
+.plan-item {
+  margin-bottom: 10px;
+  padding: 5px 0;
+  color: #e0e0e0;
+}
+
+.plan-item:last-child {
+  margin-bottom: 0;
+}
+
+.launch-button {
+  width: 100%;
+  padding: 20px;
+  font-size: 1.3rem;
+  background: linear-gradient(45deg, #ffd700, #ff6b35, #ff4757);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 25px rgba(255, 107, 53, 0.3);
+  font-weight: bold;
+}
+
+.launch-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(255, 107, 53, 0.4);
+}
+
+.mission-ongoing, .mission-impact {
+  background: rgba(26, 91, 165, 0.2);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  border: 2px solid #1a5bb5;
+}
+
+.mission-ongoing h3, .mission-impact h3 {
+  margin-bottom: 30px;
+  color: #ffd700;
+  font-size: 2rem;
+}
+
+.launch-animation {
+  margin-top: 30px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  animation: progress-fill 3s ease-out forwards;
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.impact-animation {
+  margin-top: 30px;
+}
+
+.impact-flash {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  background: radial-gradient(circle, #ffd700, #ff6b35, #ff4757);
+  border-radius: 50%;
+  animation: impact-explosion 2s ease-out;
+  opacity: 0;
+}
+
+@keyframes impact-explosion {
+  0% { 
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  100% { 
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* Mission Results */
+.mission-result {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.mission-success {
+  background: radial-gradient(ellipse at center, #0a3a75 0%, #16213e 50%, #0c0c0c 100%);
+}
+
+.mission-failure {
+  background: radial-gradient(ellipse at center, #5b0a0a 0%, #2e1616 50%, #0c0c0c 100%);
+}
+
+.space-background-success {
+  position: absolute;
+  top: 0;
+ left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.space-background-failure {
+  position: absolute;
+  top: 0;
+ left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.result-content {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 60px;
+  border-radius: 25px;
+  text-align: center;
+  border: 3px solid;
+  max-width: 600px;
+}
+
+.mission-success .result-content {
+  border-color: #4ade80;
+  color: #e0e0e0;
+}
+
+.mission-failure .result-content {
+  border-color: #ef4444;
+  color: #f0f0f0;
+}
+
+.result-content h1 {
+  font-size: 3rem;
+  margin-bottom: 30px;
+}
+
+.result-content p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+/* Animations */
+@keyframes twinkle {
+ 0%, 100% { opacity: 0.3; }
+ 50% { opacity: 1; }
+}
+
+@keyframes rotate {
+ from { transform: rotate(0deg); }
+ to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .mission-content {
+    padding: 20px;
+  }
+  
+  h2 {
+    font-size: 2rem;
+  }
+  
+  .mission-methods {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .method-card {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .result-content {
+    padding: 30px;
+    margin: 20px;
+  }
+  
+  .result-content h1 {
+    font-size: 2rem;
+  }
+  
+  .result-content p {
+    font-size: 1rem;
+  }
+}
