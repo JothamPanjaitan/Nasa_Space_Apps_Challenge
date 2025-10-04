@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Earth3D from '../components/Earth3D';
+import {
+  SimulationEngine,
+  type OrbitalElements as SimOrbitalElements,
+  type Cartesian,
+  type ImpactData
+} from '../services/simulationEngine';
 import './OrbitalTrajectorySimulator.css';
 
 interface OrbitalElements {
@@ -9,338 +17,366 @@ interface OrbitalElements {
 }
 
 interface AsteroidSimulatorProps {
-  onSimulate: (params: any, impactData: any) => void;
+  onSimulate?: (params: any, impactData: any) => void;
 }
 
-interface ImpactData {
-  energy: number;
-  tntEquivalent: number;
-  craterDiameter: number;
-  blastRadius: number;
-  thermalRadius: number;
-  seismicRadius: number;
-  tsunamiRadius?: number;
-  impactLocation: { lat: number; lng: number };
-  collisionPredicted: boolean;
-}
+const AU_IN_KM = 149597870.7; // kilometers in 1 AU
+const EARTH_RADIUS_KM = 6371;
+
+const REGIONS = [
+  { id: 'north_america', label: 'North America', lat: 45.0, lng: -100.0 },
+  { id: 'europe', label: 'Europe', lat: 54.0, lng: 15.0 },
+  { id: 'asia', label: 'Asia', lat: 35.0, lng: 100.0 },
+  { id: 'africa', label: 'Africa', lat: 0.0, lng: 20.0 },
+  { id: 'oceania', label: 'Oceania', lat: -25.0, lng: 140.0 },
+  { id: 'south_america', label: 'South America', lat: -15.0, lng: -60.0 },
+  { id: 'ocean_pacific', label: 'Pacific Ocean', lat: 0.0, lng: -150.0 },
+  { id: 'ocean_atlantic', label: 'Atlantic Ocean', lat: 20.0, lng: -30.0 },
+];
 
 export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimulatorProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | null>(null);
-  const [timeToImpact, setTimeToImpact] = useState(365);
-  const [isAnimating, setIsAnimating] = useState(true);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animRef = useRef<number | null>(null);
+  const navigate = useNavigate();
 
-  // Orbital parameters - Keplerian elements
+  // UI state
+  const [timeToImpact, setTimeToImpact] = useState<number>(365);
+  const [isAnimating, setIsAnimating] = useState<boolean>(true);
+  const [mode, setMode] = useState<'observe' | 'defend'>('observe');
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+
+  // Orbital elements (Keplerian)
   const [orbitalElements, setOrbitalElements] = useState<OrbitalElements>({
-    semiMajorAxis: 1.2, // AU - just beyond Earth's orbit
-    eccentricity: 0.8, // highly elliptical
-    inclination: 15, // degrees
-    argumentOfPeriapsis: 90 // degrees
+    semiMajorAxis: 1.2,
+    eccentricity: 0.5,
+    inclination: 15,
+    argumentOfPeriapsis: 90,
   });
 
-  // Asteroid physical properties
-  const [asteroidSize, setAsteroidSize] = useState(75); // radius in meters
-  const [asteroidDensity, setAsteroidDensity] = useState(2600); // kg/m³
-  const [impactRegion, setImpactRegion] = useState('north_america');
+  // Physical properties (clear about units)
+  const [asteroidRadiusM, setAsteroidRadiusM] = useState<number>(75); // meters (radius)
+  const [asteroidDensity, setAsteroidDensity] = useState<number>(2600); // kg/m^3
+  const [velocityKmS, setVelocityKmS] = useState<number>(17.2); // km/s user-adjustable
+  const [impactRegion, setImpactRegion] = useState<string>('north_america');
 
-  // Impact prediction results
-  const [collisionPredicted, setCollisionPredicted] = useState(false);
-  const [impactPoint, setImpactPoint] = useState<{lat: number, lng: number} | null>(null);
+  // derived
+  const [collisionPredicted, setCollisionPredicted] = useState<boolean>(false);
+  const [impactPoint, setImpactPoint] = useState<{ lat: number; lng: number } | null>(null);
 
-  const REGIONS = [
-    { id: 'north_america', label: 'North America', lat: 45.0, lng: -100.0 },
-    { id: 'europe', label: 'Europe', lat: 54.0, lng: 15.0 },
-    { id: 'asia', label: 'Asia', lat: 35.0, lng: 100.0 },
-    { id: 'africa', label: 'Africa', lat: 0.0, lng: 20.0 },
-    { id: 'oceania', label: 'Oceania', lat: -25.0, lng: 140.0 },
-    { id: 'south_america', label: 'South America', lat: -15.0, lng: -60.0 },
-    { id: 'ocean_pacific', label: 'Pacific Ocean', lat: 0.0, lng: -150.0 },
-    { id: 'ocean_atlantic', label: 'Atlantic Ocean', lat: 20.0, lng: -30.0 },
-  ];
+  // Precompute starfield for performance
+  const stars = useMemo(() => {
+    return new Array(300).fill(0).map(() => ({
+      x: Math.random(),
+      y: Math.random(),
+      alpha: 0.1 + Math.random() * 0.9,
+      size: Math.random() < 0.05 ? 2 : 1
+    }));
+  }, []);
 
-  // Calculate orbital position using Kepler's equations
-  const calculateOrbitalPosition = (time: number, elements: OrbitalElements): {x: number, y: number} => {
-    const { semiMajorAxis, eccentricity, inclination, argumentOfPeriapsis } = elements;
-    
-    // Convert to radians
-    const i = inclination * Math.PI / 180;
-    const omega = argumentOfPeriapsis * Math.PI / 180;
-    
-    // Simplified mean anomaly progression over time
-    const meanAnomaly = (2 * Math.PI * time) / 100; // Simple time progression
-    
-    // Solve for eccentric anomaly using Newton's method
-    let eccentricAnomaly = meanAnomaly;
-    for (let i = 0; i < 5; i++) {
-      eccentricAnomaly = meanAnomaly + eccentricity * Math.sin(eccentricAnomaly);
-    }
-    
-    // Position in orbital plane
-    const cosE = Math.cos(eccentricAnomaly);
-    const sinE = Math.sin(eccentricAnomaly);
-    
-    const r = semiMajorAxis * (1 - eccentricity * cosE);
-    const x_orbital = r * (cosE - eccentricity);
-    const y_orbital = r * Math.sin(eccentricAnomaly) * Math.sqrt(1 - eccentricity * eccentricity);
-    
-    // Apply inclination and argument of periapsis
-    const cosOmega = Math.cos(omega);
-    const sinOmega = Math.sin(omega);
-    const cosI = Math.cos(i);
-    const sinI = Math.sin(i);
-    
-    return {
-      x: x_orbital * cosOmega - y_orbital * sinOmega * cosI,
-      y: x_orbital * sinOmega + y_orbital * cosOmega * cosI
-    };
-  };
+  // Convert UI orbital elements to simulation engine format
+  const simElements: SimOrbitalElements = useMemo(() => ({
+    aAU: orbitalElements.semiMajorAxis,
+    e: orbitalElements.eccentricity,
+    iDeg: orbitalElements.inclination,
+    raanDeg: 0, // Default RAAN
+    argPeriDeg: orbitalElements.argumentOfPeriapsis,
+    meanAnomalyDeg: 0, // Start at periapsis
+    epochJD: 2450000.5
+  }), [orbitalElements]);
 
-  // Check for collision with Earth
-  const checkCollisionWithEarth = (elements: OrbitalElements): {collision: boolean, impactLat?: number, impactLng?: number} => {
-    const { semiMajorAxis, eccentricity } = elements;
-    
-    // Calculate closest approach distance (simplified)
-    const periapsis = semiMajorAxis * (1 - eccentricity);
-    const apoapsis = semiMajorAxis * (1 + eccentricity);
-    
-    // Earth's orbital radius ~1 AU
-    const earthRadius = 1.0;
-    const earthRadiusKm = 6371; // Earth radius in km
-    const earthRadiusAU = earthRadiusKm / (150 * 1e6); // Convert to AU
-    
-    // Check if orbit intersects Earth's orbit within tolerance
-    if (periapsis <= earthRadius + earthRadiusAU && apoapsis >= earthRadius - earthRadiusAU) {
-      // Estimate impact point (simplified)
-      const selectedRegion = REGIONS.find(r => r.id === impactRegion);
-      return {
-        collision: true,
-        impactLat: selectedRegion?.lat || 40.0,
-        impactLng: selectedRegion?.lng || -100.0
-      };
-    }
-    
-    return { collision: false };
-  };
+  // Use SimulationEngine for trajectory sampling
+  const trajectory = useMemo(() => {
+    const timeSpan = 365 * 24 * 3600; // 1 year in seconds
+    return SimulationEngine.sampleTrajectory(simElements, 0, timeSpan, 200);
+  }, [simElements]);
 
-  // Calculate impact effects
-  const calculateImpactEffects = (): ImpactData => {
-    const radius = asteroidSize; // meters
-    const density = asteroidDensity; // kg/m³
-    const velocity = 17200; // m/s (average impact velocity)
-    
-    // Mass calculation
-    const mass = (4/3) * Math.PI * Math.pow(radius, 3) * density;
-    
-    // Kinetic energy
-    const energy = 0.5 * mass * Math.pow(velocity, 2);
-    
-    // TNT equivalent (1 ton TNT = 4.184 × 10^9 J)
-    const tntEquivalent = energy / (4.184e9);
-    
-    // Crater diameter using pi-scaling law
-    const craterDiameter = radius * 1.61 * Math.pow(density/2700, 1/3) * Math.pow(velocity/1000, 2/3);
-    
-    // Effect radii (in km)
-    const blastRadius = Math.min(craterDiameter * 10 / 1000, 1000);
-    const thermalRadius = Math.min(craterDiameter * 5 / 1000, 500);
-    const seismicRadius = Math.min(craterDiameter * 20 / 1000, 2000);
-    
-    // Tsunami radius (if ocean impact)
-    const selectedRegion = REGIONS.find(r => r.id === impactRegion);
-    const tsunamiRadius = selectedRegion?.id.includes('ocean') 
-      ? Math.min(craterDiameter * 15 / 1000, 800) 
-      : undefined;
-    
-    const collisionData = checkCollisionWithEarth(orbitalElements);
-    
-    return {
-      energy,
-      tntEquivalent,
-      craterDiameter,
-      blastRadius,
-      thermalRadius,
-      seismicRadius,
-      tsunamiRadius,
-      impactLocation: collisionData.collision ? 
-        { lat: collisionData.impactLat || 40.0, lng: collisionData.impactLng || -100.0 } :
-        { lat: selectedRegion?.lat || 40.0, lng: selectedRegion?.lng || -100.0 },
-      collisionPredicted: collisionData.collision
-    };
-  };
+  const collisionResult = useMemo(() => {
+    return SimulationEngine.checkEarthCollision(trajectory);
+  }, [trajectory]);
 
-  // Update collision prediction when parameters change
   useEffect(() => {
-    const collisionData = checkCollisionWithEarth(orbitalElements);
-    setCollisionPredicted(collisionData.collision);
-    setImpactPoint(collisionData.collision ? 
-      { lat: collisionData.impactLat || 40.0, lng: collisionData.impactLng || -100.0 } : 
-      null
-    );
-  }, [orbitalElements, impactRegion]);
+    setCollisionPredicted(collisionResult.collision);
+    if (collisionResult.collision && collisionResult.impactPoint) {
+      const latLng = SimulationEngine.eciToLatLng(collisionResult.impactPoint);
+      setImpactPoint(latLng);
+    } else {
+      const region = REGIONS.find(r => r.id === impactRegion) ?? REGIONS[0];
+      setImpactPoint({ lat: region.lat, lng: region.lng });
+    }
+  }, [collisionResult, impactRegion]);
+
+  const calculateImpactEffects = (): ImpactData => {
+    const region = REGIONS.find(r => r.id === impactRegion) ?? REGIONS[0];
+    const impactLoc = impactPoint ?? { lat: region.lat, lng: region.lng };
+
+    return SimulationEngine.computeImpactEffects(asteroidRadiusM, asteroidDensity, velocityKmS, impactLoc);
+  };
+
+  // Canvas: resize & DPR handling
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(canvas.clientWidth * dpr);
+      canvas.height = Math.floor(canvas.clientHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
 
   // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const animate = (time: number) => {
-      // Clear canvas
-      ctx.fillStyle = '#000011';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    let frame = 0;
+    let impactAnimationProgress = 0;
+    let simulatePhase: 'idle' | 'animating' | 'impact' = 'idle';
+    let animationStartTime = 0;
 
-      // Draw starfield
-      for (let i = 0; i < 200; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5})`;
-        ctx.fillRect(x, y, 1, 1);
+    const startImpactAnimation = () => {
+      simulatePhase = 'animating';
+      impactAnimationProgress = 0;
+      animationStartTime = performance.now();
+    };
+
+    const draw = () => {
+      frame++;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+
+      // Clear
+      ctx.fillStyle = '#000011';
+      ctx.fillRect(0, 0, w, h);
+
+      // Stars (precomputed)
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        const sx = Math.floor(s.x * w);
+        const sy = Math.floor(s.y * h);
+        ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+        ctx.fillRect(sx, sy, s.size, s.size);
       }
 
-      // Draw Sun (center)
-      const sunX = canvas.width / 2;
-      const sunY = canvas.height / 2;
-      
+      // Sun center
+      const sunX = w / 2;
+      const sunY = h / 2;
+
       // Sun glow
-      const sunGradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 40);
-      sunGradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');
-      sunGradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
-      ctx.fillStyle = sunGradient;
+      const g = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
+      g.addColorStop(0, 'rgba(255,230,150,0.9)');
+      g.addColorStop(1, 'rgba(255,200,50,0)');
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(sunX, sunY, 40, 0, Math.PI * 2);
+      ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
       ctx.fill();
 
-      // Sun core
-      ctx.fillStyle = '#ffff00';
+      // Earth's orbit
+      ctx.strokeStyle = 'rgba(100,150,255,0.6)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(sunX, sunY, 20, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Draw Earth orbit
-      ctx.strokeStyle = 'rgba(100, 150, 255, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(sunX, sunY, 120, 0, Math.PI * 2);
+      ctx.arc(sunX, sunY, 140, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Draw Earth
-      const earthX = sunX + 120;
-      const earthY = sunY;
+      // Earth
       ctx.fillStyle = '#4A90E2';
       ctx.beginPath();
-      ctx.arc(earthX, earthY, 15, 0, Math.PI * 2);
+      ctx.arc(sunX + 140, sunY, 14, 0, Math.PI * 2);
       ctx.fill();
 
-      // Calculate asteroid position
-      const asteroidPos = calculateOrbitalPosition(time, orbitalElements);
-      const asteroidX = sunX + asteroidPos.x * 100;
-      const asteroidY = sunY + asteroidPos.y * 100;
+      // Scale factor for trajectory visualization
+      const scale = 110; // pixels per AU
+      const earthX = sunX + 140;
+      const earthY = sunY;
 
-      // Draw asteroid trajectory
-      const steps = 100;
-      ctx.strokeStyle = collisionPredicted ? 'rgba(255, 100, 100, 0.6)' : 'rgba(255, 165, 0, 0.6)';
-      ctx.lineWidth = 2;
+      // Draw trajectory path
+      ctx.strokeStyle = collisionPredicted ? 'rgba(255,80,80,0.7)' : 'rgba(255,165,0,0.7)';
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(asteroidX, asteroidY);
-      
-      for (let i = 1; i <= steps; i++) {
-        const futurePos = calculateOrbitalPosition(time + i, orbitalElements);
-        const futureX = sunX + futurePos.x * 100;
-        const futureY = sunY + futurePos.y * 100;
-        ctx.lineTo(futureX, futureY);
+      for (let i = 0; i < trajectory.length; i++) {
+        const p = trajectory[i];
+        const px = sunX + (p.x / AU_IN_KM) * scale;
+        const py = sunY + (p.y / AU_IN_KM) * scale;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
       }
       ctx.stroke();
 
-      // Draw asteroid
-      const asteroidDrawSize = Math.max(8, asteroidSize / 10);
-      
+      // Asteroid current position
+      let currentIdx = Math.floor((frame / 4) % trajectory.length);
+      if (simulatePhase === 'animating') {
+        const elapsed = (performance.now() - animationStartTime) / 1000;
+        const speedFactor = Math.max(1, velocityKmS / 6) * 30;
+        const progress = Math.min(1, elapsed * speedFactor / trajectory.length);
+        currentIdx = Math.floor(progress * trajectory.length);
+        impactAnimationProgress = progress;
+        
+        if (progress >= 1 && collisionPredicted) {
+          simulatePhase = 'impact';
+          impactAnimationProgress = 1;
+        }
+      }
+
+      // Draw asteroid at current position
+      const ast = trajectory[Math.min(trajectory.length - 1, Math.max(0, currentIdx))];
+      const asteroidX = sunX + (ast.x / AU_IN_KM) * scale;
+      const asteroidY = sunY + (ast.y / AU_IN_KM) * scale;
+      const drawSize = Math.max(6, asteroidRadiusM / 12);
+
       // Asteroid glow
-      const asteroidGradient = ctx.createRadialGradient(asteroidX, asteroidY, 0, asteroidX, asteroidY, asteroidDrawSize * 2);
-      asteroidGradient.addColorStop(0, 'rgba(255, 165, 0, 0.8)');
-      asteroidGradient.addColorStop(1, 'rgba(255, 165, 0, 0)');
-      ctx.fillStyle = asteroidGradient;
+      const ag = ctx.createRadialGradient(asteroidX, asteroidY, 0, asteroidX, asteroidY, drawSize * 2);
+      ag.addColorStop(0, 'rgba(255,165,0,0.9)');
+      ag.addColorStop(1, 'rgba(255,165,0,0)');
+      ctx.fillStyle = ag;
       ctx.beginPath();
-      ctx.arc(asteroidX, asteroidY, asteroidDrawSize * 2, 0, Math.PI * 2);
+      ctx.arc(asteroidX, asteroidY, drawSize * 1.8, 0, Math.PI * 2);
       ctx.fill();
-      
+
       // Asteroid body
       ctx.fillStyle = '#ffa500';
       ctx.beginPath();
-      ctx.arc(asteroidX, asteroidY, asteroidDrawSize, 0, Math.PI * 2);
+      ctx.arc(asteroidX, asteroidY, drawSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Draw collision warning
-     if (collisionPredicted) {
-        ctx.fillStyle = '#ff4757';
-        ctx.font = 'bold 24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('⚠️ COLLISION PREDICTED ⚠️', canvas.width / 2, 50);
+      // Impact explosion animation
+      if (simulatePhase === 'impact' && collisionPredicted) {
+        const maxR = Math.min(Math.max(w, h) / 1.5, 600);
+        const ringR = impactAnimationProgress ? Math.min(maxR, impactAnimationProgress * maxR) : 0;
+        ctx.strokeStyle = `rgba(255,90,50,${1 - impactAnimationProgress})`;
+        ctx.lineWidth = 6 * (1 - impactAnimationProgress) + 1;
+        ctx.beginPath();
+        ctx.arc(earthX, earthY, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Flash
+        ctx.fillStyle = `rgba(255,200,120,${1 - impactAnimationProgress})`;
+        ctx.beginPath();
+        ctx.arc(earthX, earthY, Math.min(100, ringR / 2), 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Draw orbital parameters
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '14px Arial';
+      // HUD text
+      ctx.fillStyle = '#fff';
+      ctx.font = '13px Inter, Arial';
       ctx.textAlign = 'left';
       
-      ctx.fillText(`Semi-Major Axis: ${orbitalElements.semiMajorAxis.toFixed(2)} AU`, 20, 70);
-      ctx.fillText(`Eccentricity: ${orbitalElements.eccentricity.toFixed(2)}`, 20, 90);
-      ctx.fillText(`Inclination: ${orbitalElements.inclination.toFixed(1)}°`, 20, 110);
-      ctx.fillText(`Arg. of Periapsis: ${orbitalElements.argumentOfPeriapsis.toFixed(1)}°`, 20, 130);
-      ctx.fillText(`Asteroid Size: ${asteroidSize}m radius`, 20, 150);
-      ctx.fillText(`Target Region: ${REGIONS.find(r => r.id === impactRegion)?.label}`, 20, 170);
-      
+      ctx.fillText(`a: ${orbitalElements.semiMajorAxis.toFixed(2)} AU`, 14, 44);
+      ctx.fillText(`e: ${orbitalElements.eccentricity.toFixed(2)}`, 14, 62);
+      ctx.fillText(`i: ${orbitalElements.inclination.toFixed(1)}°`, 14, 80);
+      ctx.fillText(`radius: ${asteroidRadiusM} m`, 14, 98);
+      ctx.fillText(`v: ${velocityKmS.toFixed(2)} km/s`, 14, 116);
+      ctx.fillText(`Mode: ${mode === 'defend' ? 'Defend (Δv available)' : 'Observe'}`, 14, 134);
+
       if (collisionPredicted && impactPoint) {
-        ctx.fillStyle = '#ff4757';
-        ctx.fillText(`Impact Location: ${impactPoint.lat.toFixed(1)}°N, ${impactPoint.lng.toFixed(1)}°E`, 20, 190);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText(`⚠️ COLLISION POSSIBLE @ ${impactPoint.lat.toFixed(1)}°, ${impactPoint.lng.toFixed(1)}°`, w / 2, 40);
       }
 
-      if (isAnimating) {
-        animationRef.current = requestAnimationFrame(animate);
+      if (isAnimating || simulatePhase !== 'idle') {
+        animRef.current = requestAnimationFrame(draw);
       }
     };
 
-    animate(0);
+    animRef.current = requestAnimationFrame(draw);
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [orbitalElements, asteroidSize, collisionPredicted, isAnimating, impactRegion]);
+  }, [orbitalElements, asteroidRadiusM, velocityKmS, stars, collisionPredicted, impactPoint, timeToImpact, isAnimating, mode, trajectory]);
 
-  const handleSimulate = () => {
-    const impactData = calculateImpactEffects();
-    const asteroidParams = {
-      size: asteroidSize,
-      velocity: 17.2, // km/s
-      density: asteroidDensity,
-      region: REGIONS.find(r => r.id === impactRegion),
-      orbitalElements: orbitalElements,
-      collisionPredicted: collisionPredicted,
-      timeToImpact: timeToImpact
-    };
+  // Simplified orbital position helper
+  const calculateOrbitalPositionSimple = (t: number, elements: OrbitalElements) => {
+    const a = elements.semiMajorAxis;
+    const e = elements.eccentricity;
+    const inc = (elements.inclination * Math.PI) / 180;
+    const omega = (elements.argumentOfPeriapsis * Math.PI) / 180;
+
+    const theta = (t % (2 * Math.PI));
+    const r = a * (1 - e * e) / (1 + e * Math.cos(theta));
+    const xOrb = r * Math.cos(theta);
+    const yOrb = r * Math.sin(theta);
+
+    const x = xOrb * Math.cos(omega) - yOrb * Math.sin(omega) * Math.cos(inc);
+    const y = xOrb * Math.sin(omega) + yOrb * Math.cos(omega) * Math.cos(inc);
+    return { x, y };
+  };
+
+  // Handle Earth click
+  const handleEarthClick = (lat: number, lng: number) => {
+    setImpactPoint({ lat, lng });
+    setCollisionPredicted(true);
+  };
+
+  // Generate trajectory for 3D Earth
+  const generateAsteroidTrajectory = () => {
+    const trajectory = [];
+    const steps = 100;
     
-    onSimulate(asteroidParams, impactData);
+    for (let i = 0; i < steps; i++) {
+      const t = (i / steps) * 2 * Math.PI;
+      const pos = calculateOrbitalPositionSimple(t, orbitalElements);
+      trajectory.push({ x: pos.x * 2, y: pos.y * 2, z: 0 });
+    }
+    
+    return trajectory;
+  };
+
+  // Simulate button handler
+  const handleSimulate = async () => {
+    setIsSimulating(true);
+    
+    const params = {
+      size: asteroidRadiusM,
+      velocity: velocityKmS,
+      region: impactRegion,
+      density: asteroidDensity,
+      orbitalElements,
+      mode,
+      timeToImpact
+    };
+
+    const impactData = calculateImpactEffects();
+
+    // Trigger impact animation
+    const delayMs = impactData.collisionPredicted ? 2000 : 1000;
+    
+    // Allow parent to receive data
+    if (onSimulate) {
+      onSimulate(params, impactData);
+    }
+
+    // Navigate to impact analysis page
+    setTimeout(() => {
+      navigate('/impact', { state: { params, impactData } });
+    }, delayMs);
   };
 
   return (
     <div className="orbital-simulator">
       <div className="simulator-header">
         <h2>🌌 Orbital Trajectory Simulator</h2>
-        <p>Configure asteroid orbital elements and predict collision trajectory with Earth</p>
+        <p>Adjust asteroid hyperparameters and simulate impact scenarios. Click <strong>Simulate</strong> to proceed to regional impact analysis.</p>
       </div>
 
       <div className="simulator-content">
         {/* Main visualization */}
         <div className="visualization-container">
-          <canvas
-            ref={canvasRef}
-            width={1000}
-            height={600}
-            className="orbital-canvas"
-          />
+          <div className="earth-3d-wrapper">
+            <Earth3D
+              asteroidTrajectory={generateAsteroidTrajectory()}
+              impactPoint={impactPoint || undefined}
+              onEarthClick={handleEarthClick}
+              className="orbital-earth-3d"
+            />
+          </div>
           
           {/* Status panel */}
           <div className="status-panel">
@@ -350,6 +386,11 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
             <div className="time-display">
               Time to Impact: {timeToImpact} days
             </div>
+            {impactPoint && (
+              <div className="impact-info">
+                <div>Impact Point: {impactPoint.lat.toFixed(2)}°N, {impactPoint.lng.toFixed(2)}°E</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -446,11 +487,11 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
               />
             </div>
 
-            <h4>Physical Properties</h4>
+            <h4>Asteroid Hyperparameters</h4>
             
             <div className="control-group">
               <label htmlFor="size-slider">
-                Asteroid Radius: {asteroidSize}m
+                Asteroid Radius: {asteroidRadiusM}m
               </label>
               <input
                 id="size-slider"
@@ -458,8 +499,8 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
                 min="10"
                 max="500"
                 step="5"
-                value={asteroidSize}
-                onChange={(e) => setAsteroidSize(parseInt(e.target.value))}
+                value={asteroidRadiusM}
+                onChange={(e) => setAsteroidRadiusM(parseInt(e.target.value))}
                 className="slider asteroid-slider"
               />
             </div>
@@ -481,7 +522,23 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
             </div>
 
             <div className="control-group">
-              <label htmlFor="region-select">Impact Region</label>
+              <label htmlFor="velocity-slider">
+                Velocity: {velocityKmS.toFixed(1)} km/s
+              </label>
+              <input
+                id="velocity-slider"
+                type="range"
+                min="5"
+                max="70"
+                step="0.1"
+                value={velocityKmS}
+                onChange={(e) => setVelocityKmS(parseFloat(e.target.value))}
+                className="slider velocity-slider"
+              />
+            </div>
+
+            <div className="control-group">
+              <label htmlFor="region-select">Target Region</label>
               <select
                 id="region-select"
                 value={impactRegion}
@@ -510,6 +567,32 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
                 className="slider time-slider"
               />
             </div>
+
+            <div className="control-group">
+              <label>Scenario Mode</label>
+              <div className="mode-toggle">
+                <label className="mode-option">
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="observe"
+                    checked={mode === 'observe'}
+                    onChange={(e) => setMode(e.target.value as 'observe' | 'defend')}
+                  />
+                  <span>Observe Only</span>
+                </label>
+                <label className="mode-option">
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="defend"
+                    checked={mode === 'defend'}
+                    onChange={(e) => setMode(e.target.value as 'observe' | 'defend')}
+                  />
+                  <span>Defend Earth</span>
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Impact Prediction */}
@@ -519,7 +602,7 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
               const impact = calculateImpactEffects();
               return (
                 <div className="impact-stats">
-                  <div className="collision-status">
+                  <div className={`collision-status ${impact.collisionPredicted ? 'danger' : 'safe'}`}>
                     <strong>{impact.collisionPredicted ? '🚨 COLLISION IMMINENT' : '✅ SAFE TRAJECTORY'}</strong>
                   </div>
                   {impact.collisionPredicted && (
@@ -557,8 +640,9 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
           <button 
             className="simulate-button"
             onClick={handleSimulate}
+            disabled={isSimulating}
           >
-            🚀 Simulate Impact Scenario
+            {isSimulating ? '🎬 Simulating...' : '🚀 Simulate Impact Scenario'}
           </button>
         </div>
       </div>

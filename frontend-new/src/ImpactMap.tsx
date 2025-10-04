@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MapContainer, TileLayer, Circle, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { UsgsApiService } from './services/usgsApi';
+import {  
+  type ImpactData as SimImpactData 
+} from './services/simulationEngine';
+import { SimulationEngine } from './services/simulationEngine';
 import './ImpactMap.css';
 
 // Fix for default markers in react-leaflet
@@ -17,22 +23,15 @@ interface AsteroidParams {
   region: string;
 }
 
-interface ImpactData {
-  energy: number;
-  tntEquivalent: number;
-  craterDiameter: number;
-  blastRadius: number;
-  thermalRadius: number;
-  seismicRadius: number;
-  tsunamiRadius?: number;
-}
+// Use the simulation engine ImpactData type
+type ImpactData = SimImpactData;
 
 interface ImpactMapProps {
   asteroidParams?: AsteroidParams;
   impactData?: ImpactData;
-  onBack: () => void;
-  onDefend: () => void;
-  onMitigation: () => void;
+  onBack?: () => void;
+  onDefend?: () => void;
+  onMitigation?: () => void;
 }
 
 const REGIONS = [
@@ -61,14 +60,14 @@ const tsunamiIcon = new L.DivIcon({
   iconAnchor: [15, 15]
 });
 
-// Default asteroid parameters if missing
+const WORLD_BOUNDS = L.latLngBounds([-85, -180], [85, 180]);
+
 const DEFAULT_ASTEROID: AsteroidParams = {
   size: 50,
   velocity: 17,
   region: REGIONS[0].id
 };
 
-// Default impact data if missing
 const DEFAULT_IMPACT: ImpactData = {
   energy: 1e15,
   tntEquivalent: 1e6,
@@ -76,7 +75,9 @@ const DEFAULT_IMPACT: ImpactData = {
   blastRadius: 20,
   thermalRadius: 10,
   seismicRadius: 40,
-  tsunamiRadius: 0
+  tsunamiRadius: 0,
+  impactLocation: { lat: 0, lng: 0 },
+  collisionPredicted: true
 };
 
 export default function ImpactMap({
@@ -86,11 +87,14 @@ export default function ImpactMap({
   onDefend,
   onMitigation
 }: ImpactMapProps) {
-  // Use state for region selection, fallback to asteroidParams or default
-  const [regionId, setRegionId] = useState(
-    asteroidParams?.region || DEFAULT_ASTEROID.region
+  const location = useLocation();
+  const state: any = location.state ?? {};
+  const passedParams = state.params ?? asteroidParams;
+  const passedImpactData = state.impactData ?? impactData;
+  
+  const [regionId, setRegionId] = useState<string>(
+    (typeof passedParams?.region === 'string' ? passedParams.region : (passedParams?.region as any)?.id) || DEFAULT_ASTEROID.region
   );
-  // Use state for effects toggles
   const [showDirect, setShowDirect] = useState(true);
   const [showIndirect, setShowIndirect] = useState(true);
   const [showTsunami, setShowTsunami] = useState(true);
@@ -99,19 +103,216 @@ export default function ImpactMap({
   const [showHealth, setShowHealth] = useState(false);
   const [showGovernance, setShowGovernance] = useState(false);
 
+  // Map loading/error state
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapLoading, setMapLoading] = useState<boolean>(true);
+  
+  // USGS data state
+  const [seismicData, setSeismicData] = useState<any>(null);
+  const [tsunamiData, setTsunamiData] = useState<any>(null);
+  const [elevationData, setElevationData] = useState<any>(null);
+
+  // Load USGS data on component mount
+  useEffect(() => {
+    const loadUsgsData = async () => {
+      try {
+        // Load seismic activity data
+        const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const endTime = new Date().toISOString().split('T')[0];
+        const seismic = await UsgsApiService.getSeismicActivity(startTime, endTime);
+        setSeismicData(seismic);
+
+        // Load tsunami hazard data for the selected region
+        const tsunami = await UsgsApiService.getTsunamiHazardData(regionId);
+        setTsunamiData(tsunami);
+
+        // Load elevation data for impact location
+        const selectedRegion = REGIONS.find(r => r.id === regionId) || REGIONS[0];
+        const elevation = await UsgsApiService.getElevationData(selectedRegion.lat, selectedRegion.lng);
+        setElevationData(elevation);
+      } catch (error) {
+        console.error('Error loading USGS data:', error);
+      }
+    };
+
+    loadUsgsData();
+  }, [regionId]);
+
+  // Handle region change - update impact location and recalculate
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRegionId(e.target.value);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!mapError && mapLoading) {
+        const mapContainer = document.querySelector('.leaflet-container');
+        if (!mapContainer || mapContainer.children.length === 0) {
+          setMapError('Map failed to load - check internet connection');
+          setMapLoading(false);
+        }
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [mapError, mapLoading]);
+
   // Find selected region
   const selectedRegion = REGIONS.find(r => r.id === regionId) || REGIONS[0];
   const impactLocation = [selectedRegion.lat, selectedRegion.lng];
 
   // Use provided or default asteroid/impact data
-  const params = asteroidParams ?? DEFAULT_ASTEROID;
-  const impact = impactData ?? DEFAULT_IMPACT;
+  const params = passedParams ?? DEFAULT_ASTEROID;
+  const impact = passedImpactData ?? DEFAULT_IMPACT;
 
-  // Calculate indirect effect radii (simplified)
-  const economicRadius = impact.blastRadius * 3;
-  const environmentalRadius = impact.blastRadius * 5;
-  const healthRadius = impact.blastRadius * 2;
-  const governanceRadius = impact.blastRadius * 4;
+  // Calculate enhanced impact data using simulation engine
+  const enhancedImpact = useMemo(() => {
+    if (passedImpactData) return passedImpactData;
+
+    if (!params) return impact;
+
+    const region = REGIONS.find(r => r.id === regionId) ?? REGIONS[0];
+    const impactLocation = { lat: region.lat, lng: region.lng };
+
+    return SimulationEngine.computeImpactEffects(
+    params.size || DEFAULT_ASTEROID.size,
+    params.density || 2600,
+    params.velocity || DEFAULT_ASTEROID.velocity,
+    impactLocation
+  );
+  }, [passedImpactData, params, regionId]);
+
+  // Calculate indirect effect radii (enhanced)
+  const economicRadius = enhancedImpact.blastRadius * 3;
+  const environmentalRadius = enhancedImpact.blastRadius * 5;
+  const healthRadius = enhancedImpact.blastRadius * 2;
+  const governanceRadius = enhancedImpact.blastRadius * 4;
+
+  // Memoized impact zones
+  const impactZones = useMemo(() => (
+    <>
+      {showDirect && (
+        <>
+          <Circle
+            center={impactLocation as [number, number]}
+            radius={enhancedImpact.blastRadius * 1000}
+            pathOptions={{
+              color: '#ff4757',
+              fillColor: '#ff4757',
+              fillOpacity: 0.3,
+              weight: 2
+            }}
+          />
+          <Circle
+            center={impactLocation as [number, number]}
+            radius={enhancedImpact.thermalRadius * 1000}
+            pathOptions={{
+              color: '#ff6b6b',
+              fillColor: '#ff6b6b',
+              fillOpacity: 0.2,
+              weight: 2
+            }}
+          />
+          <Circle
+            center={impactLocation as [number, number]}
+            radius={enhancedImpact.seismicRadius * 1000}
+            pathOptions={{
+              color: '#ffa500',
+              fillColor: '#ffa500',
+              fillOpacity: 0.1,
+              weight: 2
+            }}
+          />
+        </>
+      )}
+      {showTsunami && enhancedImpact.tsunamiRadius && enhancedImpact.tsunamiRadius > 0 && (
+        <>
+          <Circle
+            center={impactLocation as [number, number]}
+            radius={enhancedImpact.tsunamiRadius * 1000}
+            pathOptions={{
+              color: '#20b2ff',
+              fillColor: '#20b2ff',
+              fillOpacity: 0.15,
+              weight: 2
+            }}
+          />
+          <Marker position={impactLocation as [number, number]} icon={tsunamiIcon}>
+            <Popup>
+              <div className="tsunami-popup">
+                <h3>🌊 Tsunami Effects</h3>
+                <p><strong>Wave Height:</strong> {enhancedImpact.tsunamiHeight?.toFixed(1) || '0.0'} m</p>
+                <p><strong>Affected Radius:</strong> {enhancedImpact.tsunamiRadius.toFixed(0)} km</p>
+                <p><strong>Coastal Impact:</strong> Severe flooding and destruction</p>
+                {tsunamiData && (
+                  <p><strong>USGS Risk Level:</strong> {tsunamiData.risk_level}</p>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        </>
+      )}
+      {showIndirect && (
+        <>
+          {showEconomic && (
+            <Circle
+              center={impactLocation as [number, number]}
+              radius={economicRadius * 1000}
+              pathOptions={{
+                color: '#ffd700',
+                fillColor: '#ffd700',
+                fillOpacity: 0.1,
+                weight: 2,
+                dashArray: '10, 5'
+              }}
+            />
+          )}
+          {showEnvironmental && (
+            <Circle
+              center={impactLocation as [number, number]}
+              radius={environmentalRadius * 1000}
+              pathOptions={{
+                color: '#32cd32',
+                fillColor: '#32cd32',
+                fillOpacity: 0.1,
+                weight: 2,
+                dashArray: '10, 5'
+              }}
+            />
+          )}
+          {showHealth && (
+            <Circle
+              center={impactLocation as [number, number]}
+              radius={healthRadius * 1000}
+              pathOptions={{
+                color: '#ff69b4',
+                fillColor: '#ff69b4',
+                fillOpacity: 0.1,
+                weight: 2,
+                dashArray: '10, 5'
+              }}
+            />
+          )}
+          {showGovernance && (
+            <Circle
+              center={impactLocation as [number, number]}
+              radius={governanceRadius * 1000}
+              pathOptions={{
+                color: '#9370db',
+                fillColor: '#9370db',
+                fillOpacity: 0.1,
+                weight: 2,
+                dashArray: '10, 5'
+              }}
+            />
+          )}
+        </>
+      )}
+    </>
+  ), [
+    showDirect, showTsunami, showIndirect,
+    showEconomic, showEnvironmental, showHealth, showGovernance,
+    impact, impactLocation, economicRadius, environmentalRadius, healthRadius, governanceRadius
+  ]);
 
   return (
     <div className="impact-map">
@@ -131,20 +332,31 @@ export default function ImpactMap({
           </div>
           <div className="info-item">
             <span className="label">Energy:</span>
-            <span className="value">{(impact.energy / 1e15).toFixed(2)} PJ</span>
+            <span className="value">{(enhancedImpact.energy / 1e15).toFixed(2)} PJ</span>
           </div>
           <div className="info-item">
             <span className="label">TNT Equivalent:</span>
-            <span className="value">{(impact.tntEquivalent / 1e6).toFixed(2)} MT</span>
+            <span className="value">{(enhancedImpact.tntEquivalent / 1e6).toFixed(2)} MT</span>
           </div>
+          {enhancedImpact.seismicMagnitude && (
+            <div className="info-item">
+              <span className="label">Seismic Magnitude:</span>
+              <span className="value">{enhancedImpact.seismicMagnitude.toFixed(1)} Mw</span>
+            </div>
+          )}
+          {enhancedImpact.tsunamiHeight && enhancedImpact.tsunamiHeight > 0 && (
+            <div className="info-item">
+              <span className="label">Tsunami Height:</span>
+              <span className="value">{enhancedImpact.tsunamiHeight.toFixed(1)} m</span>
+            </div>
+          )}
         </div>
-        {/* Region selector */}
         <div className="region-selector">
           <label htmlFor="region-select">Impact Region:</label>
           <select
             id="region-select"
             value={regionId}
-            onChange={e => setRegionId(e.target.value)}
+            onChange={handleRegionChange}
             className="region-select"
           >
             {REGIONS.map(region => (
@@ -165,18 +377,37 @@ export default function ImpactMap({
       </div>
 
       <div className="map-content">
-        <div className="map-container">
+        <div className="map-container" style={{ height: '70vh', minHeight: '420px' }}>
+          {mapLoading && !mapError && (
+            <div className="map-overlay">
+              <div style={{ fontSize: '24px', marginBottom: '10px' }}>🗺️</div>
+              <div>Loading Map...</div>
+            </div>
+          )}
           <MapContainer
             center={impactLocation as [number, number]}
             zoom={4}
             style={{ height: '100%', width: '100%' }}
             className="impact-map-leaflet"
+            preferCanvas={true}
+            zoomControl={true}
+            scrollWheelZoom={true}
+            doubleClickZoom={true}
+            dragging={true}
+            maxBounds={WORLD_BOUNDS}
+            maxBoundsViscosity={1.0}
+            worldCopyJump={true}
+            whenReady={() => {
+              setMapError(null);
+              setMapLoading(false);
+            }}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              noWrap={true}
+              bounds={WORLD_BOUNDS}
             />
-
             {/* Impact Point */}
             <Marker position={impactLocation as [number, number]} icon={impactIcon}>
               <Popup>
@@ -188,136 +419,33 @@ export default function ImpactMap({
                 </div>
               </Popup>
             </Marker>
-
-            {/* Direct Effects */}
-            {showDirect && (
-              <>
-                {/* Blast Radius */}
-                <Circle
-                  center={impactLocation as [number, number]}
-                  radius={impact.blastRadius * 1000}
-                  pathOptions={{
-                    color: '#ff4757',
-                    fillColor: '#ff4757',
-                    fillOpacity: 0.3,
-                    weight: 2
-                  }}
-                />
-                {/* Thermal Radius */}
-                <Circle
-                  center={impactLocation as [number, number]}
-                  radius={impact.thermalRadius * 1000}
-                  pathOptions={{
-                    color: '#ff6b6b',
-                    fillColor: '#ff6b6b',
-                    fillOpacity: 0.2,
-                    weight: 2
-                  }}
-                />
-                {/* Seismic Radius */}
-                <Circle
-                  center={impactLocation as [number, number]}
-                  radius={impact.seismicRadius * 1000}
-                  pathOptions={{
-                    color: '#ffa500',
-                    fillColor: '#ffa500',
-                    fillOpacity: 0.1,
-                    weight: 2
-                  }}
-                />
-              </>
-            )}
-
-            {/* Tsunami Effects */}
-            {showTsunami && impact.tsunamiRadius && impact.tsunamiRadius > 0 && (
-              <>
-                <Circle
-                  center={impactLocation as [number, number]}
-                  radius={impact.tsunamiRadius * 1000}
-                  pathOptions={{
-                    color: '#20b2ff',
-                    fillColor: '#20b2ff',
-                    fillOpacity: 0.15,
-                    weight: 2
-                  }}
-                />
-                <Marker position={impactLocation as [number, number]} icon={tsunamiIcon}>
-                  <Popup>
-                    <div className="tsunami-popup">
-                      <h3>🌊 Tsunami Effects</h3>
-                      <p><strong>Wave Radius:</strong> {impact.tsunamiRadius.toFixed(0)} km</p>
-                      <p><strong>Coastal Impact:</strong> Severe flooding and destruction</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              </>
-            )}
-
-            {/* Indirect Effects */}
-            {showIndirect && (
-              <>
-                {/* Economic Disruptions */}
-                {showEconomic && (
-                  <Circle
-                    center={impactLocation as [number, number]}
-                    radius={economicRadius * 1000}
-                    pathOptions={{
-                      color: '#ffd700',
-                      fillColor: '#ffd700',
-                      fillOpacity: 0.1,
-                      weight: 2,
-                      dashArray: '10, 5'
-                    }}
-                  />
-                )}
-                {/* Environmental Chain Reactions */}
-                {showEnvironmental && (
-                  <Circle
-                    center={impactLocation as [number, number]}
-                    radius={environmentalRadius * 1000}
-                    pathOptions={{
-                      color: '#32cd32',
-                      fillColor: '#32cd32',
-                      fillOpacity: 0.1,
-                      weight: 2,
-                      dashArray: '10, 5'
-                    }}
-                  />
-                )}
-                {/* Public Health & Society */}
-                {showHealth && (
-                  <Circle
-                    center={impactLocation as [number, number]}
-                    radius={healthRadius * 1000}
-                    pathOptions={{
-                      color: '#ff69b4',
-                      fillColor: '#ff69b4',
-                      fillOpacity: 0.1,
-                      weight: 2,
-                      dashArray: '10, 5'
-                    }}
-                  />
-                )}
-                {/* Governance & Information Systems */}
-                {showGovernance && (
-                  <Circle
-                    center={impactLocation as [number, number]}
-                    radius={governanceRadius * 1000}
-                    pathOptions={{
-                      color: '#9370db',
-                      fillColor: '#9370db',
-                      fillOpacity: 0.1,
-                      weight: 2,
-                      dashArray: '10, 5'
-                    }}
-                  />
-                )}
-              </>
-            )}
+            {/* Impact Zones */}
+            {impactZones}
           </MapContainer>
+          {mapError && (
+            <div className="map-overlay">
+              <h3>🗺️ Map Loading Issue</h3>
+              <p>Map failed to load. This might be due to:</p>
+              <ul style={{ textAlign: 'left', margin: '10px 0' }}>
+                <li>Internet connection issues</li>
+                <li>Browser compatibility</li>
+              </ul>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  background: '#4A90E2',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                Reload Page
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Control Panel */}
         <div className="control-panel">
           <div className="effect-controls">
             <h3>Impact Effects</h3>
@@ -395,19 +523,20 @@ export default function ImpactMap({
               </label>
             </div>
           </div>
-
-          {/* Impact Analysis */}
           <div className="impact-analysis">
             <h3>Impact Analysis</h3>
             <div className="analysis-section">
               <h4>Direct Effects</h4>
               <ul>
-                <li><strong>Blast Overpressure:</strong> Complete destruction within {impact.blastRadius.toFixed(0)} km</li>
-                <li><strong>Thermal Radiation:</strong> Fires and burns within {impact.thermalRadius.toFixed(0)} km</li>
-                <li><strong>Seismic Shaking:</strong> Earthquake-like effects within {impact.seismicRadius.toFixed(0)} km</li>
-                <li><strong>Crater Formation:</strong> {(impact.craterDiameter / 1000).toFixed(2)} km diameter crater</li>
-                {impact.tsunamiRadius && impact.tsunamiRadius > 0 && (
-                  <li><strong>Tsunami:</strong> Coastal flooding within {impact.tsunamiRadius.toFixed(0)} km</li>
+                <li><strong>Blast Overpressure:</strong> Complete destruction within {enhancedImpact.blastRadius.toFixed(0)} km</li>
+                <li><strong>Thermal Radiation:</strong> Fires and burns within {enhancedImpact.thermalRadius.toFixed(0)} km</li>
+                <li><strong>Seismic Shaking:</strong> Earthquake-like effects within {enhancedImpact.seismicRadius.toFixed(0)} km</li>
+                <li><strong>Crater Formation:</strong> {(enhancedImpact.craterDiameter / 1000).toFixed(2)} km diameter crater</li>
+                {enhancedImpact.tsunamiRadius && enhancedImpact.tsunamiRadius > 0 && (
+                  <li><strong>Tsunami:</strong> Coastal flooding within {enhancedImpact.tsunamiRadius.toFixed(0)} km</li>
+                )}
+                {enhancedImpact.seismicMagnitude && (
+                  <li><strong>Seismic Magnitude:</strong> Equivalent to M{enhancedImpact.seismicMagnitude.toFixed(1)} earthquake</li>
                 )}
               </ul>
             </div>
@@ -429,6 +558,26 @@ export default function ImpactMap({
                 <li><strong>Governance:</strong> Disaster diplomacy, cross-border response frameworks</li>
               </ul>
             </div>
+            {seismicData && (
+              <div className="analysis-section">
+                <h4>USGS Seismic Data</h4>
+                <ul>
+                  <li><strong>Recent Earthquakes:</strong> {seismicData.features?.length || 0} events in last 30 days</li>
+                  <li><strong>Seismic Risk:</strong> Enhanced by impact magnitude</li>
+                  <li><strong>Ground Shaking:</strong> Amplified in seismic zones</li>
+                </ul>
+              </div>
+            )}
+            {tsunamiData && (
+              <div className="analysis-section">
+                <h4>USGS Tsunami Hazard</h4>
+                <ul>
+                  <li><strong>Risk Level:</strong> {tsunamiData.risk_level}</li>
+                  <li><strong>Affected Coastlines:</strong> {tsunamiData.affected_coastlines?.join(', ')}</li>
+                  <li><strong>Inundation Distance:</strong> {tsunamiData.inundation_distance} m</li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,8 +1,9 @@
 .game-controller {
   position: relative;
   width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow: auto;
+  padding-bottom: 80px; /* Space for footer nav */
 }
 
 .global-space-background {

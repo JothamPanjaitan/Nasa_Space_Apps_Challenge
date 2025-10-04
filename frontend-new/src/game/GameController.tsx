@@ -5,6 +5,8 @@ import DeflectionMission from './DeflectionMission';
 import CivilProtection from './CivilProtection';
 import ImpactMap from '../ImpactMap';
 import EndScreen from './EndScreen';
+import FooterNav from '../components/FooterNav';
+import HelpModal from '../components/HelpModal';
 import './GameController.css';
 
 type GameState = 
@@ -27,6 +29,7 @@ interface GameData {
 
 export default function GameController() {
   const [gameState, setGameState] = useState<GameState>('intro');
+  const [showHelp, setShowHelp] = useState(false);
   const [gameData, setGameData] = useState<GameData>({
     playerChoice: null,
     asteroidParams: null,
@@ -42,8 +45,8 @@ export default function GameController() {
     }
     
     if (choice === 'explore') {
-      // Go directly to impact map for exploration
-      setGameState('impact_map');
+      // Go to simulator for study and exploration
+      setGameState('simulator');
     } else if (choice === 'deflect') {
       // Go to deflection mission
       setGameState('deflection');
@@ -106,6 +109,50 @@ export default function GameController() {
       mitigationScore: null
     });
   };
+
+  // Handle navigation
+  const handleNavigate = (targetState: string) => {
+    if (targetState === 'back') {
+      // Implement back navigation logic
+      const stateOrder = ['intro', 'simulator', 'impact_map', 'deflection', 'civil_protection', 'ending'];
+      const currentIndex = stateOrder.indexOf(gameState);
+      if (currentIndex > 0) {
+        setGameState(stateOrder[currentIndex - 1] as GameState);
+      }
+    } else {
+      setGameState(targetState as GameState);
+    }
+  };
+
+  // Handle help modal
+  const handleHelp = () => {
+    setShowHelp(true);
+  };
+
+  // Handle export functionality
+  const handleExport = () => {
+    // Export current simulation data
+    const exportData = {
+      gameState,
+      gameData,
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `asteroid-simulation-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Determine navigation state
+  const canGoBack = gameState !== 'intro';
+  const canGoForward = gameState !== 'ending';
 
   // Render current game state
   const renderGameState = () => {
@@ -186,6 +233,23 @@ export default function GameController() {
 
       {/* Render current game state */}
       {renderGameState()}
+
+      {/* Persistent Navigation */}
+      <FooterNav
+        currentState={gameState}
+        onNavigate={handleNavigate}
+        onHelp={handleHelp}
+        onExport={gameState !== 'intro' ? handleExport : undefined}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+      />
+
+      {/* Help Modal */}
+      <HelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        currentState={gameState}
+      />
     </div>
   );
 }
