@@ -162,15 +162,22 @@ canvas {
   background: rgba(255, 255, 255, 0.05);
   padding: 20px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.1);
   text-align: center;
-  width: 150px;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .method-card:hover {
   background: rgba(255, 215, 0, 0.1);
   border-color: #ffd700;
+  transform: translateY(-5px);
+}
+
+.method-card.selected {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.1));
+  border-color: #4a90e2;
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.5);
   transform: translateY(-5px);
 }
 
@@ -184,6 +191,20 @@ canvas {
   margin: 0 0 15px 0;
   font-size: 0.9rem;
   color: #ccc;
+}
+
+.method-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.method-stats small {
+  font-size: 0.8rem;
+  color: #aaa;
 }
 
 .effort-badge {

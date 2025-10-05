@@ -6,6 +6,13 @@ interface DeflectionMissionProps {
   onSuccess: (success: boolean) => void;
 }
 
+interface AsteroidData {
+  size: number; // radius in meters
+  velocity: number; // km/s
+  density?: number; // kg/m³
+  mass?: number; // kg
+}
+
 interface DeflectionResult {
   attempted: boolean;
   success: boolean;
@@ -20,15 +27,26 @@ export default function DeflectionMission({ asteroidParams, onSuccess }: Deflect
   const [deltaV, setDeltaV] = useState<number>(0.5);
   const [timeBeforeImpact, setTimeBeforeImpact] = useState<number>(180); // days
   const [isAnimating, setIsAnimating] = useState<boolean>(true);
+  const [selectedMethod, setSelectedMethod] = useState<'kinetic' | 'gravity' | 'nuclear'>('kinetic');
 
   // Calculate mission parameters
   const missionTypes = [
-    { name: 'Kinetic Impactor', effort: 'Medium', effectiveness: 0.8 },
-    { name: 'Gravity Tractor', effort: 'High', effectiveness: 0.6 },
-    { name: 'Nuclear Deflection', effort: 'Low', effectiveness: 1.0 }
+    { id: 'kinetic', name: 'Kinetic Impactor', effort: 'Medium', effectiveness: 0.85, leadTimeRequired: 180 },
+    { id: 'gravity', name: 'Gravity Tractor', effort: 'High', effectiveness: 0.70, leadTimeRequired: 365 },
+    { id: 'nuclear', name: 'Nuclear Deflection', effort: 'Low', effectiveness: 0.95, leadTimeRequired: 90 }
   ];
 
-  const selectedType = missionTypes[Math.floor(timeBeforeImpact / 60) % missionTypes.length];
+  const selectedType = missionTypes.find(m => m.id === selectedMethod) || missionTypes[0];
+  
+  // Calculate asteroid mass if not provided
+  const asteroidMass = asteroidParams?.mass || (() => {
+    const radius = asteroidParams?.size || 75; // meters
+    const density = asteroidParams?.density || 2600; // kg/m³
+    const volume = (4/3) * Math.PI * Math.pow(radius, 3);
+    return volume * density;
+  })();
+  
+  const asteroidVelocity = asteroidParams?.velocity || 17.2; // km/s
 
   // Animation loop for mission visualization
   useEffect(() => {
@@ -100,18 +118,44 @@ export default function DeflectionMission({ asteroidParams, onSuccess }: Deflect
     };
   }, [missionStage, isAnimating]);
 
+  // Calculate required deltaV for 1 Earth radius deflection
+  const calculateRequiredDeltaV = (): number => {
+    // Required deltaV = (mass * velocity) / (lead time in seconds)
+    const leadTimeSeconds = timeBeforeImpact * 86400; // days to seconds
+    const velocityMS = asteroidVelocity * 1000; // km/s to m/s
+    return (asteroidMass * velocityMS) / leadTimeSeconds / 1e9; // Scaled for reasonable values
+  };
+  
+  // Calculate success probability dynamically
+  const calculateSuccessProbability = (): number => {
+    const requiredDeltaV = calculateRequiredDeltaV();
+    
+    // Lead time factor (more time = higher success)
+    const leadTimeFactor = Math.min(1, timeBeforeImpact / selectedType.leadTimeRequired);
+    
+    // DeltaV factor (adequate deltaV = higher success)
+    const deltaVFactor = Math.min(1, deltaV / requiredDeltaV);
+    
+    // Combined probability
+    const probability = selectedType.effectiveness * leadTimeFactor * deltaVFactor;
+    
+    return Math.max(0, Math.min(1, probability));
+  };
+  
+  // Calculate deflection distance
+  const calculateDeflectionDistance = (): number => {
+    // Deflection distance = (deltaV / velocity) * lead time * velocity
+    const velocityMS = asteroidVelocity * 1000; // m/s
+    const leadTimeSeconds = timeBeforeImpact * 86400;
+    return (deltaV / velocityMS) * leadTimeSeconds / 1000; // km
+  };
+  
+  const successProbability = calculateSuccessProbability();
+  const deflectionDistance = calculateDeflectionDistance();
+  const requiredDeltaV = calculateRequiredDeltaV();
+
   const calculateDeflectionResult = (): DeflectionResult => {
-    // Simplified deflection calculation
-    const requiredDeltaV = 2.0; // m/s required for success
-    const timeFactor = Math.max(0.1, timeBeforeImpact / 60);
-    const deltaVFactor = deltaV / requiredDeltaV;
-    
-    const successProbability = deltaVFactor * timeFactor * selectedType.effectiveness;
     const success = successProbability > 0.7;
-    
-    const deflectionDistance = success ? 
-      Math.random() * 10000 + 10000 : // 10,000-20,000 km
-      Math.random() * 1000; // 0-1,000 km
     
     return {
       attempted: true,
@@ -204,7 +248,7 @@ export default function DeflectionMission({ asteroidParams, onSuccess }: Deflect
               <h4>Mission Status: {missionStage.toUpperCase()}</h4>
               <p>Selected Method: {selectedType.name}</p>
               <p>Required Effort: {selectedType.effort}</p>
-              <p>Success Probability: {(deltaV * 0.4 * timeBeforeImpact / 100).toFixed(0)}%</p>
+              <p>Success Probability: {(successProbability * 100).toFixed(1)}%</p>
             </div>
           </div>
         </div>
@@ -216,21 +260,22 @@ export default function DeflectionMission({ asteroidParams, onSuccess }: Deflect
             <div className="mission-setup">
               <h4>Method Selection</h4>
               <div className="mission-methods">
-                <div className="method-card">
-                  <h5>Kinetic Impactor</h5>
-                  <p>Direct spacecraft impact</p>
-                  <span className="effort-badge medium">Medium Effort</span>
-                </div>
-                <div className="method-card">
-                  <h5>Gravity Tractor</h5>
-                  <p>Gravitational attraction</p>
-                  <span className="effort-badge high">High Effort</span>
-                </div>
-                <div className="method-card">
-                  <h5>Nuclear Deflection</h5>
-                  <p>Mounted explosive device</p>
-                  <span className="effort-badge low">Low Effort</span>
-                </div>
+                {missionTypes.map((method) => (
+                  <div 
+                    key={method.id}
+                    className={`method-card ${selectedMethod === method.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedMethod(method.id as any)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <h5>{method.name}</h5>
+                    <p>{method.id === 'kinetic' ? 'Direct spacecraft impact' : method.id === 'gravity' ? 'Gravitational attraction' : 'Mounted explosive device'}</p>
+                    <span className={`effort-badge ${method.effort.toLowerCase()}`}>{method.effort} Effort</span>
+                    <div className="method-stats">
+                      <small>Effectiveness: {(method.effectiveness * 100).toFixed(0)}%</small>
+                      <small>Lead Time: {method.leadTimeRequired} days</small>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -265,16 +310,22 @@ export default function DeflectionMission({ asteroidParams, onSuccess }: Deflect
               <h4>Mission Plan</h4>
               <div className="plan-details">
                 <div className="plan-item">
-                  <strong>Target:</strong> Asteroid 2025-IMPCTOR ({asteroidParams?.size.toFixed(0)}m radius)
+                  <strong>Target:</strong> Asteroid 2025-IMPCTOR ({(asteroidParams?.size || 75).toFixed(0)}m radius)
                 </div>
                 <div className="plan-item">
-                  <strong>Approach Velocity:</strong> {asteroidParams?.velocity.toFixed(0)} km/s
+                  <strong>Mass:</strong> {(asteroidMass / 1e9).toFixed(2)} billion kg
                 </div>
                 <div className="plan-item">
-                  <strong>Estimated Deflection:</strong> {(deltaV * timeBeforeImpact * 0.01).toFixed(0)} km
+                  <strong>Approach Velocity:</strong> {asteroidVelocity.toFixed(1)} km/s
                 </div>
                 <div className="plan-item">
-                  <strong>Risk Assessment:</strong> {deltaV > 2.0 && timeBeforeImpact > 120 ? 'Low' : 'Medium'}
+                  <strong>Required ΔV:</strong> {requiredDeltaV.toFixed(2)} m/s
+                </div>
+                <div className="plan-item">
+                  <strong>Estimated Deflection:</strong> {deflectionDistance.toFixed(1)} km
+                </div>
+                <div className="plan-item">
+                  <strong>Risk Assessment:</strong> {successProbability > 0.8 ? 'Low' : successProbability > 0.5 ? 'Medium' : 'High'}
                 </div>
               </div>
             </div>

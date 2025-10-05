@@ -185,15 +185,7 @@ export default function GameController() {
         );
 
       case 'impact_map':
-        return (
-          <ImpactMap
-            asteroidParams={gameData.asteroidParams}
-            impactData={gameData.impactData}
-            onBack={() => setGameState('simulator')}
-            onDefend={() => setGameState('deflection')}
-            onMitigation={() => setGameState('civil_protection')}
-          />
-        );
+        return <ImpactMap />;
 
       case 'ending':
         return (

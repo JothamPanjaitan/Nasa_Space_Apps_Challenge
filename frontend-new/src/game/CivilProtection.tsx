@@ -21,6 +21,22 @@ export default function CivilProtection({ impactData, asteroidParams, onComplete
   const [infrastructureHardening, setInfrastructureHardening] = useState(15);
   const [warningSystem, setWarningSystem] = useState(80);
   const [medicalSurgeCapacity, setMedicalSurgeCapacity] = useState(25);
+  
+  // Calculate forecast values with proper defaults
+  const forecast = {
+    size: asteroidParams?.size || 75, // meters
+    velocity: asteroidParams?.velocity || 17.2, // km/s
+    blastRadius: impactData?.blastRadius || 50, // km
+    energy: impactData?.energy || impactData?.kineticEnergyJ || (() => {
+      // Calculate if not provided: E = 1/2 * m * v^2
+      const radius = asteroidParams?.size || 75;
+      const density = asteroidParams?.density || 2600; // kg/m³
+      const volume = (4/3) * Math.PI * Math.pow(radius, 3);
+      const mass = volume * density;
+      const velocity = (asteroidParams?.velocity || 17.2) * 1000; // km/s to m/s
+      return 0.5 * mass * velocity * velocity;
+    })(),
+  };
 
   // Calculate mitigation effectiveness
   const calculateMitigationScore = (): MitigationScore => {
@@ -100,19 +116,19 @@ export default function CivilProtection({ impactData, asteroidParams, onComplete
             <div className="summary-grid">
               <div className="summary-item">
                 <span className="label">Size:</span>
-                <span className="value">{asteroidParams?.size?.toFixed(0)}m radius</span>
+                <span className="value">{forecast.size.toFixed(0)}m radius</span>
               </div>
               <div className="summary-item">
                 <span className="label">Velocity:</span>
-                <span className="value">{asteroidParams?.velocity?.toFixed(0)} km/s</span>
+                <span className="value">{forecast.velocity.toFixed(1)} km/s</span>
               </div>
               <div className="summary-item">
                 <span className="label">Blast Radius:</span>
-                <span className="value">{impactData?.blastRadius?.toFixed(0)} km</span>
+                <span className="value">{forecast.blastRadius.toFixed(0)} km</span>
               </div>
               <div className="summary-item">
                 <span className="label">Impact Energy:</span>
-                <span className="value">{(impactData?.energy / 1e15).toFixed(2)} PJ</span>
+                <span className="value">{(forecast.energy / 1e15).toFixed(2)} PJ</span>
               </div>
             </div>
           </div>

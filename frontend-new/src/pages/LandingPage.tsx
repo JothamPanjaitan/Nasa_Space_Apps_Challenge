@@ -49,25 +49,18 @@ const LandingPage: React.FC = () => {
           {/* CTA Buttons */}
           <div className="cta-buttons">
             <button 
+              className="btn btn-primary btn-large"
+              onClick={() => navigate('/asteroid-data')}
+            >
+              <span className="btn-icon">🛰️</span>
+              Asteroid Live Data
+            </button>
+            <button 
               className="btn btn-accent btn-large"
               onClick={() => navigate('/game')}
             >
               <span className="btn-icon">🎮</span>
-              Defend Earth (Quick Start)
-            </button>
-            <button 
-              className="btn btn-primary btn-large"
-              onClick={() => navigate('/')}
-            >
-              <span className="btn-icon">🌍</span>
-              Explore Scenario
-            </button>
-            <button 
-              className="btn btn-secondary btn-large"
-              onClick={() => navigate('/mitigation')}
-            >
-              <span className="btn-icon">🛰️</span>
-              Load Real NEO
+              Game Mode
             </button>
           </div>
 

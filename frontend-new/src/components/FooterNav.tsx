@@ -21,10 +21,10 @@ export default function FooterNav({
   const getNavigationItems = () => {
     const items = [
       { id: 'intro', label: 'Home', icon: '🏠', disabled: false },
-      { id: 'simulator', label: 'Simulator', icon: '🌌', disabled: false },
+      { id: 'simulator', label: 'Study & Explore', icon: '🔍', disabled: false },
       { id: 'impact_map', label: 'Impact', icon: '💥', disabled: false },
-      { id: 'deflection', label: 'Defend', icon: '🚀', disabled: false },
-      { id: 'civil_protection', label: 'Protect', icon: '🛡️', disabled: false }
+      { id: 'deflection', label: 'Defend Earth', icon: '🛡', disabled: false },
+      { id: 'civil_protection', label: 'Prepare for Impact', icon: '🏠', disabled: false }
     ];
 
     return items.map(item => ({

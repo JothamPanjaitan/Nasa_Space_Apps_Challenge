@@ -1,0 +1,393 @@
+/* Orbital Simulator Styles */
+
+.orbital-simulator {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+
+.simulator-header {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(138, 160, 200, 0.15);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  text-align: center;
+  z-index: 10;
+}
+
+.simulator-header h1 {
+  font-size: var(--font-size-xxl);
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.simulator-header p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.simulator-content {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.controls-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(138, 160, 200, 0.15);
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  height: 100%;
+}
+
+.asteroid-selector {
+  margin-bottom: var(--spacing-xl);
+}
+
+.asteroid-selector h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+}
+
+.error-message {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--danger-500);
+}
+
+.asteroid-select {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid rgba(138, 160, 200, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.asteroid-select:hover {
+  border-color: var(--primary-500);
+}
+
+.asteroid-select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(26, 111, 237, 0.1);
+}
+
+.asteroid-info {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: rgba(26, 111, 237, 0.05);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(26, 111, 237, 0.1);
+}
+
+.asteroid-info h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.info-grid {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid rgba(138, 160, 200, 0.1);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.info-item .value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.info-item .value.hazardous {
+  color: var(--danger-500);
+}
+
+.info-item .value.safe {
+  color: var(--success-500);
+}
+
+.orbital-data {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: rgba(138, 160, 200, 0.05);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(138, 160, 200, 0.1);
+}
+
+.orbital-data h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.orbital-grid {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.orbital-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid rgba(138, 160, 200, 0.1);
+}
+
+.orbital-item:last-child {
+  border-bottom: none;
+}
+
+.orbital-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.orbital-value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
+.impact-button,
+.game-button {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.impact-button {
+  background: var(--primary-500);
+  color: white;
+}
+
+.impact-button:hover {
+  background: var(--primary-600);
+  transform: translateY(-1px);
+}
+
+.game-button {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid rgba(138, 160, 200, 0.2);
+}
+
+.game-button:hover {
+  background: rgba(138, 160, 200, 0.1);
+  color: var(--text-primary);
+}
+
+.simulator-info {
+  padding: var(--spacing-lg);
+  background: rgba(138, 160, 200, 0.05);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(138, 160, 200, 0.1);
+}
+
+.simulator-info h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.info-content p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--spacing-sm);
+}
+
+.info-content ul {
+  margin: var(--spacing-sm) 0;
+  padding-left: var(--spacing-md);
+}
+
+.info-content li {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.visualization-container {
+  position: relative;
+  height: 100%;
+  background: #000011;
+}
+
+.no-selection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 17, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+
+.overlay-content {
+  text-align: center;
+  color: white;
+  padding: var(--spacing-xl);
+}
+
+.overlay-content h2 {
+  font-size: var(--font-size-xxl);
+  margin: 0 0 var(--spacing-md) 0;
+  background: linear-gradient(135deg, var(--primary-500), var(--accent-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.overlay-content p {
+  font-size: var(--font-size-lg);
+  margin: 0 0 var(--spacing-lg) 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.features-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.feature {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: white;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: var(--spacing-lg);
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(26, 111, 237, 0.2);
+  border-top: 4px solid var(--primary-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-container h2 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.loading-container p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .simulator-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  
+  .controls-panel {
+    border-right: none;
+    border-bottom: 1px solid rgba(138, 160, 200, 0.15);
+    height: auto;
+    max-height: 50vh;
+  }
+  
+  .features-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .simulator-header {
+    padding: var(--spacing-md);
+  }
+  
+  .simulator-header h1 {
+    font-size: var(--font-size-xl);
+  }
+  
+  .controls-panel {
+    padding: var(--spacing-lg);
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .overlay-content h2 {
+    font-size: var(--font-size-xl);
+  }
+  
+  .overlay-content p {
+    font-size: var(--font-size-base);
+  }
+}

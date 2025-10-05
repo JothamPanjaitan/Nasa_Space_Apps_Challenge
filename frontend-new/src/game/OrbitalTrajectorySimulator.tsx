@@ -350,9 +350,21 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
       onSimulate(params, impactData);
     }
 
-    // Navigate to impact analysis page
+    // Navigate based on mode
     setTimeout(() => {
-      navigate('/impact', { state: { params, impactData } });
+      if (mode === 'observe') {
+        // Observer mode: go to impact analysis
+        navigate('/impact', { state: { params, impactData, mode: 'simulator' } });
+      } else {
+        // Defend Earth mode: stay in game flow
+        if (onSimulate) {
+          // Let parent handle navigation in game mode
+          setIsSimulating(false);
+        } else {
+          // Fallback to impact page
+          navigate('/impact', { state: { params, impactData, mode: 'game' } });
+        }
+      }
     }, delayMs);
   };
 
@@ -380,19 +392,28 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
           <div style={{position: 'absolute', top: 10, right: 20, color: '#fff', zIndex: 2, background: 'rgba(0,0,0,0.3)', borderRadius: 6, padding: '2px 10px', fontSize: 13}}>
             Zoom: {(zoom * 100).toFixed(0)}%
           </div>
-          {/* Status panel */}
-          <div className="status-panel">
-            <div className={`collision-status ${collisionPredicted ? 'danger' : 'safe'}`}>
-              {collisionPredicted ? '🚨 COLLISION PREDICTED' : '✅ SAFE TRAJECTORY'}
-            </div>
-            <div className="time-display">
-              Time to Impact: {timeToImpact} days
-            </div>
-            {impactPoint && (
-              <div className="impact-info">
-                <div>Impact Point: {impactPoint.lat.toFixed(2)}°N, {impactPoint.lng.toFixed(2)}°E</div>
+          
+          {/* Tidy Status Panel */}
+          <div className="trajectory-status-panel">
+            <div className={`status-indicator ${collisionPredicted ? 'danger' : 'safe'}`}>
+              <div className="status-icon">{collisionPredicted ? '🚨' : '✅'}</div>
+              <div className="status-text">
+                <strong>{collisionPredicted ? 'COLLISION IMMINENT' : 'SAFE TRAJECTORY'}</strong>
               </div>
-            )}
+            </div>
+            
+            <div className="status-details">
+              <div className="status-item">
+                <span className="status-label">Time to Impact:</span>
+                <span className="status-value">{timeToImpact} days</span>
+              </div>
+              {impactPoint && (
+                <div className="status-item">
+                  <span className="status-label">Impact Point:</span>
+                  <span className="status-value">{impactPoint.lat.toFixed(2)}°N, {impactPoint.lng.toFixed(2)}°E</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -572,27 +593,21 @@ export default function OrbitalTrajectorySimulator({ onSimulate }: AsteroidSimul
 
             <div className="control-group">
               <label>Scenario Mode</label>
-              <div className="mode-toggle">
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    name="mode"
-                    value="observe"
-                    checked={mode === 'observe'}
-                    onChange={(e) => setMode(e.target.value as 'observe' | 'defend')}
-                  />
-                  <span>Observe Only</span>
-                </label>
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    name="mode"
-                    value="defend"
-                    checked={mode === 'defend'}
-                    onChange={(e) => setMode(e.target.value as 'observe' | 'defend')}
-                  />
-                  <span>Defend Earth</span>
-                </label>
+              <div className="scenario-mode-toggle">
+                <button
+                  className={`toggle-option ${mode === 'observe' ? 'active' : ''}`}
+                  onClick={() => setMode('observe')}
+                >
+                  <span className="toggle-icon">🔬</span>
+                  <span className="toggle-label">Observe Only</span>
+                </button>
+                <button
+                  className={`toggle-option ${mode === 'defend' ? 'active' : ''}`}
+                  onClick={() => setMode('defend')}
+                >
+                  <span className="toggle-icon">🛡️</span>
+                  <span className="toggle-label">Defend Earth</span>
+                </button>
               </div>
             </div>
           </div>

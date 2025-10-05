@@ -1,0 +1,369 @@
+/* Help Page Styles */
+
+.help-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0e1a 0%, #050810 100%);
+  color: white;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.help-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.help-background .stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.help-background .star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 3s linear infinite;
+}
+
+.help-background .star-0 {
+  width: 1px;
+  height: 1px;
+  top: calc(10% + var(--i) * 7%);
+  left: calc(5% + var(--i) * 11%);
+}
+
+.help-background .star-1 {
+  width: 2px;
+  height: 2px;
+  top: calc(20% + var(--i) * 13%);
+  left: calc(15% + var(--i) * 17%);
+}
+
+.help-background .star-2 {
+  width: 1.5px;
+  height: 1.5px;
+  top: calc(30% + var(--i) * 19%);
+  left: calc(25% + var(--i) * 23%);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.help-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.help-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.help-header h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #4a90e2 0%, #ff6b35 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.help-header p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.help-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.help-section {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.help-section h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #4a90e2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.help-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.help-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #4a90e2;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3);
+}
+
+.help-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  color: #ff6b35;
+}
+
+.help-card h4 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #4a90e2;
+}
+
+.help-card p {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.help-card ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+.help-card li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+.help-card li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: #4a90e2;
+  font-weight: bold;
+}
+
+.help-card strong {
+  color: #4a90e2;
+}
+
+.formula {
+  background: rgba(74, 144, 226, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+  font-family: 'Courier New', monospace;
+  margin-top: 1rem;
+}
+
+/* Strategy Grid */
+.strategy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.strategy-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.strategy-item h4 {
+  margin-bottom: 0.5rem;
+}
+
+.strategy-item p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin: 0.25rem 0.25rem 0 0;
+}
+
+/* Legend Grid */
+.legend-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.legend-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.legend-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.legend-item p {
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Formula Grid */
+.formula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.formula-item {
+  background: rgba(74, 144, 226, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+}
+
+.formula-item strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4a90e2;
+}
+
+.formula-item code {
+  display: block;
+  font-family: 'Courier New', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+  color: #ff6b35;
+}
+
+.formula-item p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Tip Cards */
+.tip-card {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(255, 107, 53, 0.1));
+  border-color: #4a90e2;
+}
+
+.tip-card h3 {
+  color: #4a90e2;
+}
+
+/* Footer */
+.help-footer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding: 2rem;
+}
+
+.help-footer .btn {
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-footer .btn-primary {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  border-color: #4a90e2;
+}
+
+.help-footer .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.5);
+}
+
+.help-footer .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.help-footer .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .help-header h1 {
+    font-size: 2rem;
+  }
+  
+  .help-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .help-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .strategy-grid,
+  .formula-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .help-footer {
+    flex-direction: column;
+  }
+  
+  .help-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
