@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OrbitRenderer from './OrbitRenderer';
+import CesiumGlobe from './CesiumGlobe';
 import { neoDataToOrbitalElements, formatOrbitalElements } from '../lib/orbitPhysics';
 import { getWorkerManager } from '../lib/workerManager';
 import type { NEOData, OrbitalElements } from '../types/impact';
@@ -187,7 +188,7 @@ export default function OrbitalSimulator({ onNavigateToImpact }: OrbitalSimulato
             </h3>
             {error && (
               <div className="error-message">
-                ⚠️ {error}
+                ⚠️ "{error}"
               </div>
             )}
             <select
@@ -297,22 +298,21 @@ export default function OrbitalSimulator({ onNavigateToImpact }: OrbitalSimulato
         </div>
 
         <div className="visualization-container">
-          <OrbitRenderer 
-            elements={orbitalElements}
+          <CesiumGlobe 
             selectedAsteroid={selectedAsteroid}
-            onAsteroidSelect={handleAsteroidSelect}
+            orbitalElements={orbitalElements}
           />
           
           {!selectedAsteroid && (
-            <div className="no-selection-overlay">
-              <div className="overlay-content">
-                <h2>🌍 3D Orbital Simulator</h2>
-                <p>Select an asteroid from the panel to view its orbital path</p>
+            <div className="no-selection-overlay" style={{ pointerEvents: 'none' }}>
+              <div className="overlay-content" style={{ pointerEvents: 'auto' }}>
+                <h2>🌍 Interactive Globe</h2>
+                <p>Select an asteroid to view its trajectory and potential impact zones</p>
                 <div className="features-list">
                   <div className="feature">🛰️ Real NASA Data</div>
-                  <div className="feature">🎯 3D Visualization</div>
-                  <div className="feature">📊 Orbital Elements</div>
-                  <div className="feature">⚠️ Hazard Assessment</div>
+                  <div className="feature">🌍 Zoomable Globe</div>
+                  <div className="feature">🗺️ Country Labels</div>
+                  <div className="feature">⚠️ Impact Zones</div>
                 </div>
               </div>
             </div>

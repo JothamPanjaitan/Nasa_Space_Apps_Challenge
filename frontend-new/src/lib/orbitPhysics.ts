@@ -342,22 +342,67 @@ export function calculateMissionSuccess(
  * Convert NEO data to orbital elements
  */
 export function neoDataToOrbitalElements(neoData: any): OrbitalElements | null {
-  if (!neoData.orbital_data) return null;
+  if (!neoData?.orbital_data) {
+    console.warn('No orbital data available for NEO');
+    return null;
+  }
   
   const orbital = neoData.orbital_data;
   
   try {
+    const a = parseFloat(orbital.semi_major_axis);
+    const e = parseFloat(orbital.eccentricity);
+    const i = parseFloat(orbital.inclination);
+    const omega = parseFloat(orbital.perihelion_argument);
+    const Omega = parseFloat(orbital.ascending_node_longitude);
+    const M0 = parseFloat(orbital.mean_anomaly);
+    
+    // Validate all values are finite numbers
+    if (!isFinite(a) || !isFinite(e) || !isFinite(i) || !isFinite(omega) || !isFinite(Omega) || !isFinite(M0)) {
+      console.error('Invalid orbital parameters:', { a, e, i, omega, Omega, M0 });
+      return null;
+    }
+    
+    // Parse epoch - handle different formats (Julian Date or ISO string)
+    let epochMs: number;
+    
+    // Try to parse as Julian Date first (could be string or number)
+    const epochValue = typeof orbital.epoch_osculation === 'string' 
+      ? parseFloat(orbital.epoch_osculation) 
+      : orbital.epoch_osculation;
+    
+    // Check if it's a valid Julian Date (typically > 2400000)
+    if (typeof epochValue === 'number' && !isNaN(epochValue) && epochValue > 2400000) {
+      // It's a Julian Date - convert to milliseconds
+      // JD 2440587.5 = Unix epoch (1970-01-01 00:00:00)
+      const JD_UNIX_EPOCH = 2440587.5;
+      const daysSinceUnixEpoch = epochValue - JD_UNIX_EPOCH;
+      epochMs = daysSinceUnixEpoch * 24 * 3600 * 1000;
+    } else if (typeof orbital.epoch_osculation === 'string') {
+      // Try parsing as ISO date string
+      const epochDate = new Date(orbital.epoch_osculation);
+      if (isNaN(epochDate.getTime())) {
+        console.warn('Could not parse epoch, using current time:', orbital.epoch_osculation);
+        epochMs = Date.now(); // fallback to current time
+      } else {
+        epochMs = epochDate.getTime();
+      }
+    } else {
+      console.warn('Unknown epoch format, using current time');
+      epochMs = Date.now();
+    }
+    
     return {
-      a: parseFloat(orbital.semi_major_axis) * AU, // convert AU to meters
-      e: parseFloat(orbital.eccentricity),
-      i: parseFloat(orbital.inclination) * Math.PI / 180, // convert degrees to radians
-      omega: parseFloat(orbital.perihelion_argument) * Math.PI / 180,
-      Omega: parseFloat(orbital.ascending_node_longitude) * Math.PI / 180,
-      M0: parseFloat(orbital.mean_anomaly) * Math.PI / 180,
-      epochMs: new Date(orbital.epoch_osculation).getTime()
+      a: a * AU, // convert AU to meters
+      e: e,
+      i: i * Math.PI / 180, // convert degrees to radians
+      omega: omega * Math.PI / 180,
+      Omega: Omega * Math.PI / 180,
+      M0: M0 * Math.PI / 180,
+      epochMs: epochMs
     };
   } catch (error) {
-    console.error('Error converting NEO data to orbital elements:', error);
+    console.error('Error converting NEO data to orbital elements:', error, neoData);
     return null;
   }
 }

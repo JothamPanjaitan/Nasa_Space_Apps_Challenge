@@ -76,20 +76,40 @@ export default function OrbitRenderer({ elements, selectedAsteroid, onAsteroidSe
     const stars = new THREE.Points(starGeometry, starMaterial);
     scene.add(stars);
 
-    // Create Earth
+    // Create Earth with realistic textures
     const earthGeometry = new THREE.SphereGeometry(6.371e6, 64, 64);
     
-    // Earth texture (simplified)
-    const earthTexture = new THREE.TextureLoader().load(
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    // Load Earth texture from NASA
+    const textureLoader = new THREE.TextureLoader();
+    const earthMaterial = new THREE.MeshPhongMaterial({
+      shininess: 5,
+      specular: new THREE.Color(0x333333),
+    });
+    
+    // Load Earth day texture (NASA Blue Marble)
+    textureLoader.load(
+      'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
+      (texture) => {
+        earthMaterial.map = texture;
+        earthMaterial.needsUpdate = true;
+      },
+      undefined,
+      (error) => {
+        console.warn('Failed to load Earth texture, using fallback color');
+        earthMaterial.color = new THREE.Color(0x2233ff);
+        earthMaterial.needsUpdate = true;
+      }
     );
     
-    const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0x4a90e2,
-      map: earthTexture,
-      transparent: true,
-      opacity: 0.9
-    });
+    // Load bump map for terrain
+    textureLoader.load(
+      'https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png',
+      (texture) => {
+        earthMaterial.bumpMap = texture;
+        earthMaterial.bumpScale = 0.05;
+        earthMaterial.needsUpdate = true;
+      }
+    );
     
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     earth.receiveShadow = true;
@@ -176,31 +196,48 @@ export default function OrbitRenderer({ elements, selectedAsteroid, onAsteroidSe
 
       // Update orbit and asteroid position
       if (elements) {
-        const positions: number[] = [];
-        const samples = 360;
-        
-        for (let s = 0; s < samples; s++) {
-          const t = currentTime + (s * 24 * 3600 * 1000) / 10; // sample
-          const pos = keplerianToPosition(elements, t);
-          positions.push(pos.x, pos.y, pos.z);
+        try {
+          const positions: number[] = [];
+          const samples = 360;
+          
+          for (let s = 0; s < samples; s++) {
+            const t = currentTime + (s * 24 * 3600 * 1000) / 10; // sample
+            const pos = keplerianToPosition(elements, t);
+            
+            // Validate position values
+            if (isFinite(pos.x) && isFinite(pos.y) && isFinite(pos.z)) {
+              positions.push(pos.x, pos.y, pos.z);
+            } else {
+              // Use default position if invalid
+              positions.push(0, 0, 0);
+            }
+          }
+          
+          if (positions.length > 0) {
+            orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+          }
+          
+          // Update asteroid position
+          const currentPos = keplerianToPosition(elements, currentTime);
+          if (isFinite(currentPos.x) && isFinite(currentPos.y) && isFinite(currentPos.z)) {
+            asteroid.position.set(currentPos.x, currentPos.y, currentPos.z);
+          }
+          
+          // Update trajectory markers
+          for (let i = 0; i < markers.length; i++) {
+            const t = currentTime + (i * 24 * 3600 * 1000 * 30); // 30-day intervals
+            const pos = keplerianToPosition(elements, t);
+            if (isFinite(pos.x) && isFinite(pos.y) && isFinite(pos.z)) {
+              markers[i].position.set(pos.x, pos.y, pos.z);
+            }
+          }
+          
+          // Rotate asteroid
+          asteroid.rotation.x += 0.01;
+          asteroid.rotation.y += 0.01;
+        } catch (error) {
+          console.error('Error updating orbit visualization:', error);
         }
-        
-        orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        
-        // Update asteroid position
-        const currentPos = keplerianToPosition(elements, currentTime);
-        asteroid.position.set(currentPos.x, currentPos.y, currentPos.z);
-        
-        // Update trajectory markers
-        for (let i = 0; i < markers.length; i++) {
-          const t = currentTime + (i * 24 * 3600 * 1000 * 30); // 30-day intervals
-          const pos = keplerianToPosition(elements, t);
-          markers[i].position.set(pos.x, pos.y, pos.z);
-        }
-        
-        // Rotate asteroid
-        asteroid.rotation.x += 0.01;
-        asteroid.rotation.y += 0.01;
       }
 
       // Rotate Earth
