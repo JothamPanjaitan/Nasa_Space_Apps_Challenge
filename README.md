@@ -1,7 +1,7 @@
 # 🌍☄️ Meteor Madness: Defend Earth
 
 **NASA Space Apps Challenge 2025**  
-**Team MeteorBusUK:** Arman, Micu, Wok, Jotham  
+**Team MeteorBusUK:** Arman, Micu, Wok, Jothamd, Cyrus  
 **Deadline:** Sunday, October 5, 2025 - 11:59 PM AEST
 
 ---
@@ -308,6 +308,7 @@ This project is for educational and demonstration purposes as part of NASA Space
 - Micu - Frontend & UI/UX
 - Wok - 3D Visualization
 - Jotham - Game Design & Integration
+- Cyrus - Concept design & presentation
 
 **Data Sources:**
 - NASA JPL NEO Program
